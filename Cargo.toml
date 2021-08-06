@@ -1,0 +1,27 @@
+[package]
+name = "macrofied-toolbox"
+version = "0.1.0"
+edition = "2018"
+description = "The macroification of some fundamental rust boilerplate patterns, i.e. option, result, etc."
+license = "MIT"
+include = ["src/**/*", "Cargo.toml", "LICENSE-MIT", "README.md"]
+homepage = "https://github.com/Nejat/macrofied-toolbox-rs"
+repository = "https://github.com/Nejat/macrofied-toolbox-rs"
+keywords = ["option", "result", "command", "path"]
+authors = ["Nejat<nejatoz@gmail.com>"]
+categories = ["rust-pattern"]
+
+[package.metadata.docs.rs]
+features = ["all"]
+
+[dependencies]
+cli-toolbox = { version = "0.5", optional = true }
+
+[features]
+default = []
+all = []
+debug = ["cli-toolbox/debug"]
+debug-all = ["debug-option", "debug-result", "debug-command"]
+debug-option = ["debug"]
+debug-result = ["debug"]
+debug-command = ["debug"]
