@@ -11,3 +11,6 @@
 
 //! This library provides the macroification of some fundamental rust boilerplate
 //! patterns, i.e. option, result, etc.
+
+#[cfg(feature = "result")]
+mod result;
