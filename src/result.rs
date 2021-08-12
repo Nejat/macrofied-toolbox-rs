@@ -1,20 +1,21 @@
 /// The `result!` macro provides ergonomic handling of debug messages when
 /// dealing with `Result<T,E>` return values.
 ///
-/// Just like the [`cli-toolbox`](https://crates.io/crates/cli-toolbox) crate, the that debug logic
-/// is based on, this is not a logging alternative, it's intended to produce debugging output to be
+/// Just like the [`cli-toolbox`](https://crates.io/crates/cli-toolbox) crate, that the debug logic
+/// is based on, this is not a logging alternative; it's intended to produce debugging output to be
 /// used during application development.
 ///
-/// Allthough this macro was designed to make debugging more ergonomic, it includes variations
-/// that do not include debugging to provide coding consistency, _i.e. so that you can use
-/// the same syntax through out your crate_
-///
+/// Although this macro was designed to make debugging more ergonomic, it includes variations
+/// that do not include debugging to provide coding consistency, so you can use the same syntax
+/// consistently through out your crate.
+/// \
+/// \
 /// \* _debugging output for OK results also makes sense and can be added in the future_\
-/// \* _this macro is automatically generated, including_ `docs`
+/// \*\* _this macro is automatically generated in a custom build script, including_ `docs`
 ///
 /// # Features
 ///
-/// * you can output basic or formatted debugging output for `Err` results of an expression
+/// * you can output basic or formatted debugging information for `Err` results of an expression
 ///     * the `Err` value is appended to the debugging output
 ///     * you can discard the `Err` value and not append it to the debugging output
 ///     * you can obtain the `Err` value and provide custom error reporting
