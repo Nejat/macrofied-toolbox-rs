@@ -8,7 +8,38 @@ pub fn generate_result_macro() -> io::Result<()> {
     let result_source_file = File::create("src/result.rs")?;
     let mut out = BufWriter::new(result_source_file);
 
-    writeln!(out, "///")?;
+    writeln!(out, r#"/// The `result!` macro provides ergonomic handling of debug messages when
+/// dealing with `Result<T,E>` return values.
+///
+/// Just like the [`cli-toolbox`](https://crates.io/crates/cli-toolbox) crate, the that debug logic
+/// is based on, this is not a logging alternative, it's intended to produce debugging output to be
+/// used during application development.
+///
+/// Although this macro was designed to make debugging more ergonomic, it includes variations
+/// that do not include debugging to provide coding consistency, _i.e. so that you can use
+/// the same syntax through out your crate_
+///
+/// \* _debugging output for OK results also makes sense and can be added in the future_\
+/// \* _this macro is automatically generated, including_ `docs`
+///
+/// # Features
+///
+/// * you can output basic or formatted debugging output for `Err` results of an expression
+///     * the `Err` value is appended to the debugging output
+///     * you can discard the `Err` value and not append it to the debugging output
+///     * you can obtain the `Err` value and provide custom error reporting
+/// * you can evaluate code on `Ok` results of an expression
+///     * you can obtain the `Ok` value
+///     * you can discard the `Ok` value
+/// * you can evaluate code on `Err` results of an expression
+///     * you can obtain the `Err` value
+///     * you can discard the `Err` value
+///
+/// # Examples
+///"#)?;
+
+    macro_doc_examples(&mut out)?;
+
     writeln!(out, "#[macro_export]")?;
     writeln!(out, "macro_rules! result {{")?;
 
@@ -44,7 +75,7 @@ pub fn generate_result_macro() -> io::Result<()> {
         let has_debug = any(dbg_flags);
         let has_error = any(err_flags);
 
-        comment(out, configuration, has_ok, has_debug, has_error)?;
+        comment(&mut out, configuration, has_ok, has_debug, has_error, "    // ", "    // ", "")?;
 
         writeln!(out, "    (")?;
         writeln!(out, "        WHEN   $when:expr;")?;
@@ -105,6 +136,106 @@ pub fn generate_result_macro() -> io::Result<()> {
     }
 
     writeln!(out, "}}")
+}
+
+fn macro_doc_examples<W: Write>(out: &mut W) -> io::Result<()> {
+    for configuration in macro_configurations() {
+        let (
+            ok_blk, ok, ok_val_blk, ok_val, ok_mut_val_blk, ok_mut_val,
+            dbg, dbg_args, _dbg, _dbg_args, dbg_err_args,
+            err, err_err
+        ) = configuration;
+
+        let has_ok = any([ok_blk, ok, ok_val_blk, ok_val, ok_mut_val_blk, ok_mut_val]);
+        let has_debug = any([dbg, dbg_args, _dbg, _dbg_args, dbg_err_args]);
+        let has_error = any([err, err_err]);
+
+        comment(out, configuration, has_ok, has_debug, has_error, "/// * ", "///   ", "\\")?;
+
+        writeln!(out, "///")?;
+        writeln!(out, "/// ```rust")?;
+        writeln!(out, "/// # use macrofied_toolbox::result;")?;
+        writeln!(out, "/// # use cli_toolbox::debug;")?;
+        writeln!(out, "/// result! {{")?;
+        writeln!(out, "///     WHEN   foo();")?;
+
+        if has_ok {
+            if ok {
+                write!(out, "///     OK     junk()")?;
+            } else if ok_val {
+                write!(out, "///     OK     val; if val == 42 {{ junk(); }}")?;
+            } else if ok_mut_val {
+                write!(out, "///     OK     mut val; junk(&mut val)")?;
+            } else if ok_blk {
+                writeln!(out, "///     OK     {{ junk() }}")?;
+            } else if ok_val_blk {
+                writeln!(out, "///     OK     val; {{ if val == 42 {{ junk(); }} }}")?;
+            } else if ok_mut_val_blk {
+                writeln!(out, "///     OK     mut val; {{ junk(&mut val); }}")?;
+            }
+
+            if ok || ok_val || ok_mut_val {
+                if has_debug || has_error {
+                    writeln!(out, ";")?;
+                } else {
+                    writeln!(out)?;
+                }
+            }
+        }
+
+        if has_debug {
+            if dbg {
+                write!(out, "///     DEBUG  \"foo failed\"")?;
+            } else if dbg_args {
+                write!(out, "///     DEBUG  \"foo failed: {{}}\", 42")?;
+            } else if _dbg {
+                write!(out, "///     _DEBUG \"foo failed\"")?;
+            } else if _dbg_args {
+                write!(out, "///     _DEBUG \"foo failed: {{}}\", 42")?;
+            } else if dbg_err_args {
+                write!(out, "///     DEBUG  err; \"foo failed: {{}}, err: {{:?}}\", 42, err")?;
+            }
+
+            if has_error {
+                writeln!(out, ";")?;
+            } else {
+                writeln!(out)?;
+            }
+        }
+
+        if has_error {
+            if err {
+                write!(out, "///     ERR    process_error()")?;
+            } else if err_err {
+                write!(out, "///     ERR    err; process_error(err)")?;
+            }
+
+            writeln!(out)?;
+        }
+
+        writeln!(out, "/// }}")?;
+        writeln!(out, "/// # fn foo() -> Result<usize, &'static str> {{ Ok(42) }}")?;
+
+        if has_ok {
+            if ok_mut_val || ok_mut_val_blk {
+                writeln!(out, "/// # fn junk(_val: &mut usize) {{}}")?;
+            } else {
+                writeln!(out, "/// # fn junk() {{}}")?;
+            }
+        }
+
+        if has_error {
+            if err {
+                writeln!(out, "/// # fn process_error() {{}}")?;
+            } else {
+                writeln!(out, "/// # fn process_error<E>(_err: E) {{}}")?;
+            }
+        }
+
+        writeln!(out, "/// ```")?;
+    }
+
+    Ok(())
 }
 
 fn macro_logic<W: Write>(
@@ -315,9 +446,11 @@ fn macro_logic<W: Write>(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 fn comment<W: Write>(
     out: &mut W, configuration: Configuration,
     has_ok: bool, has_debug: bool, has_error: bool,
+    prefix1: &str, prefix2: &str, suffix: &str
 ) -> io::Result<()> {
     let (
         ok_blk, ok, ok_val_blk, ok_val, ok_mut_val_blk, ok_mut_val,
@@ -383,11 +516,11 @@ fn comment<W: Write>(
         }
     };
 
-    let second_when = |out: &mut W| write!(out, "\n    // when");
+    let second_when = |out: &mut W| write!(out, "{}\n{}when", suffix, prefix2);
 
     const DEBUG_CONTEXT: &str = " error, ";
 
-    write!(out, "    // when")?;
+    write!(out, "{}when", prefix1)?;
 
     match (has_ok, has_debug, has_error) {
         (true, false, false) => {

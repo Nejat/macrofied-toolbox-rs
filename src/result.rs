@@ -1,4 +1,1455 @@
+/// The `result!` macro provides ergonomic handling of debug messages when
+/// dealing with `Result<T,E>` return values.
 ///
+/// Just like the [`cli-toolbox`](https://crates.io/crates/cli-toolbox) crate, the that debug logic
+/// is based on, this is not a logging alternative, it's intended to produce debugging output to be
+/// used during application development.
+///
+/// Allthough this macro was designed to make debugging more ergonomic, it includes variations
+/// that do not include debugging to provide coding consistency, _i.e. so that you can use
+/// the same syntax through out your crate_
+///
+/// \* _debugging output for OK results also makes sense and can be added in the future_\
+/// \* _this macro is automatically generated, including_ `docs`
+///
+/// # Features
+///
+/// * you can output basic or formatted debugging output for `Err` results of an expression
+///     * the `Err` value is appended to the debugging output
+///     * you can discard the `Err` value and not append it to the debugging output
+///     * you can obtain the `Err` value and provide custom error reporting
+/// * you can evaluate code on `Ok` results of an expression
+///     * you can obtain the `Ok` value
+///     * you can discard the `Ok` value
+/// * you can evaluate code on `Err` results of an expression
+///     * you can obtain the `Err` value
+///     * you can discard the `Err` value
+///
+/// # Examples
+///
+/// * when ok, evaluate expression; discard ok
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     junk()
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// ```
+/// * when ok, evaluate code block with value
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     val; { if val == 42 { junk(); } }
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// ```
+/// * when ok, evaluate expression with value
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     val; if val == 42 { junk(); }
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// ```
+/// * when ok, evaluate code block with mutable value
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     mut val; { junk(&mut val); }
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk(_val: &mut usize) {}
+/// ```
+/// * when ok, evaluate expression with mutable value
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     mut val; junk(&mut val)
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk(_val: &mut usize) {}
+/// ```
+/// * when error, output debug message
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     DEBUG  "foo failed"
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// ```
+/// * when error, output formatted debug message
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     DEBUG  "foo failed: {}", 42
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// ```
+/// * when error, output debug message without err
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     _DEBUG "foo failed"
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// ```
+/// * when error, output formatted debug message without err
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     _DEBUG "foo failed: {}", 42
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// ```
+/// * when error, output formatted debug message with custom err
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     DEBUG  err; "foo failed: {}, err: {:?}", 42, err
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// ```
+/// * when error, evaluate expression; discard err
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     ERR    process_error()
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn process_error() {}
+/// ```
+/// * when error, evaluate expression
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     ERR    err; process_error(err)
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn process_error<E>(_err: E) {}
+/// ```
+/// * when ok, evaluate code block; discard ok\
+///   when error, output debug message
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     { junk() }
+///     DEBUG  "foo failed"
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// ```
+/// * when ok, evaluate code block; discard ok\
+///   when error, output formatted debug message
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     { junk() }
+///     DEBUG  "foo failed: {}", 42
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// ```
+/// * when ok, evaluate code block; discard ok\
+///   when error, output debug message without err
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     { junk() }
+///     _DEBUG "foo failed"
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// ```
+/// * when ok, evaluate code block; discard ok\
+///   when error, output formatted debug message without err
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     { junk() }
+///     _DEBUG "foo failed: {}", 42
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// ```
+/// * when ok, evaluate code block; discard ok\
+///   when error, output formatted debug message with custom err
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     { junk() }
+///     DEBUG  err; "foo failed: {}, err: {:?}", 42, err
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// ```
+/// * when ok, evaluate expression; discard ok\
+///   when error, output debug message
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     junk();
+///     DEBUG  "foo failed"
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// ```
+/// * when ok, evaluate expression; discard ok\
+///   when error, output formatted debug message
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     junk();
+///     DEBUG  "foo failed: {}", 42
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// ```
+/// * when ok, evaluate expression; discard ok\
+///   when error, output debug message without err
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     junk();
+///     _DEBUG "foo failed"
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// ```
+/// * when ok, evaluate expression; discard ok\
+///   when error, output formatted debug message without err
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     junk();
+///     _DEBUG "foo failed: {}", 42
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// ```
+/// * when ok, evaluate expression; discard ok\
+///   when error, output formatted debug message with custom err
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     junk();
+///     DEBUG  err; "foo failed: {}, err: {:?}", 42, err
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// ```
+/// * when ok, evaluate code block with value\
+///   when error, output debug message
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     val; { if val == 42 { junk(); } }
+///     DEBUG  "foo failed"
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// ```
+/// * when ok, evaluate code block with value\
+///   when error, output formatted debug message
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     val; { if val == 42 { junk(); } }
+///     DEBUG  "foo failed: {}", 42
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// ```
+/// * when ok, evaluate code block with value\
+///   when error, output debug message without err
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     val; { if val == 42 { junk(); } }
+///     _DEBUG "foo failed"
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// ```
+/// * when ok, evaluate code block with value\
+///   when error, output formatted debug message without err
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     val; { if val == 42 { junk(); } }
+///     _DEBUG "foo failed: {}", 42
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// ```
+/// * when ok, evaluate code block with value\
+///   when error, output formatted debug message with custom err
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     val; { if val == 42 { junk(); } }
+///     DEBUG  err; "foo failed: {}, err: {:?}", 42, err
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// ```
+/// * when ok, evaluate expression with value\
+///   when error, output debug message
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     val; if val == 42 { junk(); };
+///     DEBUG  "foo failed"
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// ```
+/// * when ok, evaluate expression with value\
+///   when error, output formatted debug message
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     val; if val == 42 { junk(); };
+///     DEBUG  "foo failed: {}", 42
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// ```
+/// * when ok, evaluate expression with value\
+///   when error, output debug message without err
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     val; if val == 42 { junk(); };
+///     _DEBUG "foo failed"
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// ```
+/// * when ok, evaluate expression with value\
+///   when error, output formatted debug message without err
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     val; if val == 42 { junk(); };
+///     _DEBUG "foo failed: {}", 42
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// ```
+/// * when ok, evaluate expression with value\
+///   when error, output formatted debug message with custom err
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     val; if val == 42 { junk(); };
+///     DEBUG  err; "foo failed: {}, err: {:?}", 42, err
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// ```
+/// * when ok, evaluate code block with mutable value\
+///   when error, output debug message
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     mut val; { junk(&mut val); }
+///     DEBUG  "foo failed"
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk(_val: &mut usize) {}
+/// ```
+/// * when ok, evaluate code block with mutable value\
+///   when error, output formatted debug message
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     mut val; { junk(&mut val); }
+///     DEBUG  "foo failed: {}", 42
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk(_val: &mut usize) {}
+/// ```
+/// * when ok, evaluate code block with mutable value\
+///   when error, output debug message without err
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     mut val; { junk(&mut val); }
+///     _DEBUG "foo failed"
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk(_val: &mut usize) {}
+/// ```
+/// * when ok, evaluate code block with mutable value\
+///   when error, output formatted debug message without err
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     mut val; { junk(&mut val); }
+///     _DEBUG "foo failed: {}", 42
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk(_val: &mut usize) {}
+/// ```
+/// * when ok, evaluate code block with mutable value\
+///   when error, output formatted debug message with custom err
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     mut val; { junk(&mut val); }
+///     DEBUG  err; "foo failed: {}, err: {:?}", 42, err
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk(_val: &mut usize) {}
+/// ```
+/// * when ok, evaluate expression with mutable value\
+///   when error, output debug message
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     mut val; junk(&mut val);
+///     DEBUG  "foo failed"
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk(_val: &mut usize) {}
+/// ```
+/// * when ok, evaluate expression with mutable value\
+///   when error, output formatted debug message
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     mut val; junk(&mut val);
+///     DEBUG  "foo failed: {}", 42
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk(_val: &mut usize) {}
+/// ```
+/// * when ok, evaluate expression with mutable value\
+///   when error, output debug message without err
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     mut val; junk(&mut val);
+///     _DEBUG "foo failed"
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk(_val: &mut usize) {}
+/// ```
+/// * when ok, evaluate expression with mutable value\
+///   when error, output formatted debug message without err
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     mut val; junk(&mut val);
+///     _DEBUG "foo failed: {}", 42
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk(_val: &mut usize) {}
+/// ```
+/// * when ok, evaluate expression with mutable value\
+///   when error, output formatted debug message with custom err
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     mut val; junk(&mut val);
+///     DEBUG  err; "foo failed: {}, err: {:?}", 42, err
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk(_val: &mut usize) {}
+/// ```
+/// * when ok, evaluate code block; discard ok\
+///   when error, output debug message then evaluate expression; discard err
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     { junk() }
+///     DEBUG  "foo failed";
+///     ERR    process_error()
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// # fn process_error() {}
+/// ```
+/// * when ok, evaluate code block; discard ok\
+///   when error, output debug message then evaluate expression
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     { junk() }
+///     DEBUG  "foo failed";
+///     ERR    err; process_error(err)
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// # fn process_error<E>(_err: E) {}
+/// ```
+/// * when ok, evaluate code block; discard ok\
+///   when error, output formatted debug message then evaluate expression; discard err
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     { junk() }
+///     DEBUG  "foo failed: {}", 42;
+///     ERR    process_error()
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// # fn process_error() {}
+/// ```
+/// * when ok, evaluate code block; discard ok\
+///   when error, output formatted debug message then evaluate expression
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     { junk() }
+///     DEBUG  "foo failed: {}", 42;
+///     ERR    err; process_error(err)
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// # fn process_error<E>(_err: E) {}
+/// ```
+/// * when ok, evaluate code block; discard ok\
+///   when error, output debug message without err then evaluate expression; discard err
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     { junk() }
+///     _DEBUG "foo failed";
+///     ERR    process_error()
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// # fn process_error() {}
+/// ```
+/// * when ok, evaluate code block; discard ok\
+///   when error, output debug message without err then evaluate expression
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     { junk() }
+///     _DEBUG "foo failed";
+///     ERR    err; process_error(err)
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// # fn process_error<E>(_err: E) {}
+/// ```
+/// * when ok, evaluate code block; discard ok\
+///   when error, output formatted debug message without err then evaluate expression; discard err
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     { junk() }
+///     _DEBUG "foo failed: {}", 42;
+///     ERR    process_error()
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// # fn process_error() {}
+/// ```
+/// * when ok, evaluate code block; discard ok\
+///   when error, output formatted debug message without err then evaluate expression
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     { junk() }
+///     _DEBUG "foo failed: {}", 42;
+///     ERR    err; process_error(err)
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// # fn process_error<E>(_err: E) {}
+/// ```
+/// * when ok, evaluate code block; discard ok\
+///   when error, output formatted debug message with custom err then evaluate expression
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     { junk() }
+///     DEBUG  err; "foo failed: {}, err: {:?}", 42, err;
+///     ERR    process_error()
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// # fn process_error() {}
+/// ```
+/// * when ok, evaluate expression; discard ok\
+///   when error, output debug message then evaluate expression; discard err
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     junk();
+///     DEBUG  "foo failed";
+///     ERR    process_error()
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// # fn process_error() {}
+/// ```
+/// * when ok, evaluate expression; discard ok\
+///   when error, output debug message then evaluate expression
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     junk();
+///     DEBUG  "foo failed";
+///     ERR    err; process_error(err)
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// # fn process_error<E>(_err: E) {}
+/// ```
+/// * when ok, evaluate expression; discard ok\
+///   when error, output formatted debug message then evaluate expression; discard err
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     junk();
+///     DEBUG  "foo failed: {}", 42;
+///     ERR    process_error()
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// # fn process_error() {}
+/// ```
+/// * when ok, evaluate expression; discard ok\
+///   when error, output formatted debug message then evaluate expression
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     junk();
+///     DEBUG  "foo failed: {}", 42;
+///     ERR    err; process_error(err)
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// # fn process_error<E>(_err: E) {}
+/// ```
+/// * when ok, evaluate expression; discard ok\
+///   when error, output debug message without err then evaluate expression; discard err
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     junk();
+///     _DEBUG "foo failed";
+///     ERR    process_error()
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// # fn process_error() {}
+/// ```
+/// * when ok, evaluate expression; discard ok\
+///   when error, output debug message without err then evaluate expression
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     junk();
+///     _DEBUG "foo failed";
+///     ERR    err; process_error(err)
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// # fn process_error<E>(_err: E) {}
+/// ```
+/// * when ok, evaluate expression; discard ok\
+///   when error, output formatted debug message without err then evaluate expression; discard err
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     junk();
+///     _DEBUG "foo failed: {}", 42;
+///     ERR    process_error()
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// # fn process_error() {}
+/// ```
+/// * when ok, evaluate expression; discard ok\
+///   when error, output formatted debug message without err then evaluate expression
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     junk();
+///     _DEBUG "foo failed: {}", 42;
+///     ERR    err; process_error(err)
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// # fn process_error<E>(_err: E) {}
+/// ```
+/// * when ok, evaluate expression; discard ok\
+///   when error, output formatted debug message with custom err then evaluate expression
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     junk();
+///     DEBUG  err; "foo failed: {}, err: {:?}", 42, err;
+///     ERR    process_error()
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// # fn process_error() {}
+/// ```
+/// * when ok, evaluate code block with value\
+///   when error, output debug message then evaluate expression; discard err
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     val; { if val == 42 { junk(); } }
+///     DEBUG  "foo failed";
+///     ERR    process_error()
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// # fn process_error() {}
+/// ```
+/// * when ok, evaluate code block with value\
+///   when error, output debug message then evaluate expression
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     val; { if val == 42 { junk(); } }
+///     DEBUG  "foo failed";
+///     ERR    err; process_error(err)
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// # fn process_error<E>(_err: E) {}
+/// ```
+/// * when ok, evaluate code block with value\
+///   when error, output formatted debug message then evaluate expression; discard err
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     val; { if val == 42 { junk(); } }
+///     DEBUG  "foo failed: {}", 42;
+///     ERR    process_error()
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// # fn process_error() {}
+/// ```
+/// * when ok, evaluate code block with value\
+///   when error, output formatted debug message then evaluate expression
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     val; { if val == 42 { junk(); } }
+///     DEBUG  "foo failed: {}", 42;
+///     ERR    err; process_error(err)
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// # fn process_error<E>(_err: E) {}
+/// ```
+/// * when ok, evaluate code block with value\
+///   when error, output debug message without err then evaluate expression; discard err
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     val; { if val == 42 { junk(); } }
+///     _DEBUG "foo failed";
+///     ERR    process_error()
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// # fn process_error() {}
+/// ```
+/// * when ok, evaluate code block with value\
+///   when error, output debug message without err then evaluate expression
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     val; { if val == 42 { junk(); } }
+///     _DEBUG "foo failed";
+///     ERR    err; process_error(err)
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// # fn process_error<E>(_err: E) {}
+/// ```
+/// * when ok, evaluate code block with value\
+///   when error, output formatted debug message without err then evaluate expression; discard err
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     val; { if val == 42 { junk(); } }
+///     _DEBUG "foo failed: {}", 42;
+///     ERR    process_error()
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// # fn process_error() {}
+/// ```
+/// * when ok, evaluate code block with value\
+///   when error, output formatted debug message without err then evaluate expression
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     val; { if val == 42 { junk(); } }
+///     _DEBUG "foo failed: {}", 42;
+///     ERR    err; process_error(err)
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// # fn process_error<E>(_err: E) {}
+/// ```
+/// * when ok, evaluate code block with value\
+///   when error, output formatted debug message with custom err then evaluate expression
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     val; { if val == 42 { junk(); } }
+///     DEBUG  err; "foo failed: {}, err: {:?}", 42, err;
+///     ERR    process_error()
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// # fn process_error() {}
+/// ```
+/// * when ok, evaluate expression with value\
+///   when error, output debug message then evaluate expression; discard err
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     val; if val == 42 { junk(); };
+///     DEBUG  "foo failed";
+///     ERR    process_error()
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// # fn process_error() {}
+/// ```
+/// * when ok, evaluate expression with value\
+///   when error, output debug message then evaluate expression
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     val; if val == 42 { junk(); };
+///     DEBUG  "foo failed";
+///     ERR    err; process_error(err)
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// # fn process_error<E>(_err: E) {}
+/// ```
+/// * when ok, evaluate expression with value\
+///   when error, output formatted debug message then evaluate expression; discard err
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     val; if val == 42 { junk(); };
+///     DEBUG  "foo failed: {}", 42;
+///     ERR    process_error()
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// # fn process_error() {}
+/// ```
+/// * when ok, evaluate expression with value\
+///   when error, output formatted debug message then evaluate expression
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     val; if val == 42 { junk(); };
+///     DEBUG  "foo failed: {}", 42;
+///     ERR    err; process_error(err)
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// # fn process_error<E>(_err: E) {}
+/// ```
+/// * when ok, evaluate expression with value\
+///   when error, output debug message without err then evaluate expression; discard err
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     val; if val == 42 { junk(); };
+///     _DEBUG "foo failed";
+///     ERR    process_error()
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// # fn process_error() {}
+/// ```
+/// * when ok, evaluate expression with value\
+///   when error, output debug message without err then evaluate expression
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     val; if val == 42 { junk(); };
+///     _DEBUG "foo failed";
+///     ERR    err; process_error(err)
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// # fn process_error<E>(_err: E) {}
+/// ```
+/// * when ok, evaluate expression with value\
+///   when error, output formatted debug message without err then evaluate expression; discard err
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     val; if val == 42 { junk(); };
+///     _DEBUG "foo failed: {}", 42;
+///     ERR    process_error()
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// # fn process_error() {}
+/// ```
+/// * when ok, evaluate expression with value\
+///   when error, output formatted debug message without err then evaluate expression
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     val; if val == 42 { junk(); };
+///     _DEBUG "foo failed: {}", 42;
+///     ERR    err; process_error(err)
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// # fn process_error<E>(_err: E) {}
+/// ```
+/// * when ok, evaluate expression with value\
+///   when error, output formatted debug message with custom err then evaluate expression
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     val; if val == 42 { junk(); };
+///     DEBUG  err; "foo failed: {}, err: {:?}", 42, err;
+///     ERR    process_error()
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk() {}
+/// # fn process_error() {}
+/// ```
+/// * when ok, evaluate code block with mutable value\
+///   when error, output debug message then evaluate expression; discard err
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     mut val; { junk(&mut val); }
+///     DEBUG  "foo failed";
+///     ERR    process_error()
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk(_val: &mut usize) {}
+/// # fn process_error() {}
+/// ```
+/// * when ok, evaluate code block with mutable value\
+///   when error, output debug message then evaluate expression
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     mut val; { junk(&mut val); }
+///     DEBUG  "foo failed";
+///     ERR    err; process_error(err)
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk(_val: &mut usize) {}
+/// # fn process_error<E>(_err: E) {}
+/// ```
+/// * when ok, evaluate code block with mutable value\
+///   when error, output formatted debug message then evaluate expression; discard err
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     mut val; { junk(&mut val); }
+///     DEBUG  "foo failed: {}", 42;
+///     ERR    process_error()
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk(_val: &mut usize) {}
+/// # fn process_error() {}
+/// ```
+/// * when ok, evaluate code block with mutable value\
+///   when error, output formatted debug message then evaluate expression
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     mut val; { junk(&mut val); }
+///     DEBUG  "foo failed: {}", 42;
+///     ERR    err; process_error(err)
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk(_val: &mut usize) {}
+/// # fn process_error<E>(_err: E) {}
+/// ```
+/// * when ok, evaluate code block with mutable value\
+///   when error, output debug message without err then evaluate expression; discard err
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     mut val; { junk(&mut val); }
+///     _DEBUG "foo failed";
+///     ERR    process_error()
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk(_val: &mut usize) {}
+/// # fn process_error() {}
+/// ```
+/// * when ok, evaluate code block with mutable value\
+///   when error, output debug message without err then evaluate expression
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     mut val; { junk(&mut val); }
+///     _DEBUG "foo failed";
+///     ERR    err; process_error(err)
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk(_val: &mut usize) {}
+/// # fn process_error<E>(_err: E) {}
+/// ```
+/// * when ok, evaluate code block with mutable value\
+///   when error, output formatted debug message without err then evaluate expression; discard err
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     mut val; { junk(&mut val); }
+///     _DEBUG "foo failed: {}", 42;
+///     ERR    process_error()
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk(_val: &mut usize) {}
+/// # fn process_error() {}
+/// ```
+/// * when ok, evaluate code block with mutable value\
+///   when error, output formatted debug message without err then evaluate expression
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     mut val; { junk(&mut val); }
+///     _DEBUG "foo failed: {}", 42;
+///     ERR    err; process_error(err)
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk(_val: &mut usize) {}
+/// # fn process_error<E>(_err: E) {}
+/// ```
+/// * when ok, evaluate code block with mutable value\
+///   when error, output formatted debug message with custom err then evaluate expression
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     mut val; { junk(&mut val); }
+///     DEBUG  err; "foo failed: {}, err: {:?}", 42, err;
+///     ERR    process_error()
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk(_val: &mut usize) {}
+/// # fn process_error() {}
+/// ```
+/// * when ok, evaluate expression with mutable value\
+///   when error, output debug message then evaluate expression; discard err
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     mut val; junk(&mut val);
+///     DEBUG  "foo failed";
+///     ERR    process_error()
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk(_val: &mut usize) {}
+/// # fn process_error() {}
+/// ```
+/// * when ok, evaluate expression with mutable value\
+///   when error, output debug message then evaluate expression
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     mut val; junk(&mut val);
+///     DEBUG  "foo failed";
+///     ERR    err; process_error(err)
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk(_val: &mut usize) {}
+/// # fn process_error<E>(_err: E) {}
+/// ```
+/// * when ok, evaluate expression with mutable value\
+///   when error, output formatted debug message then evaluate expression; discard err
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     mut val; junk(&mut val);
+///     DEBUG  "foo failed: {}", 42;
+///     ERR    process_error()
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk(_val: &mut usize) {}
+/// # fn process_error() {}
+/// ```
+/// * when ok, evaluate expression with mutable value\
+///   when error, output formatted debug message then evaluate expression
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     mut val; junk(&mut val);
+///     DEBUG  "foo failed: {}", 42;
+///     ERR    err; process_error(err)
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk(_val: &mut usize) {}
+/// # fn process_error<E>(_err: E) {}
+/// ```
+/// * when ok, evaluate expression with mutable value\
+///   when error, output debug message without err then evaluate expression; discard err
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     mut val; junk(&mut val);
+///     _DEBUG "foo failed";
+///     ERR    process_error()
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk(_val: &mut usize) {}
+/// # fn process_error() {}
+/// ```
+/// * when ok, evaluate expression with mutable value\
+///   when error, output debug message without err then evaluate expression
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     mut val; junk(&mut val);
+///     _DEBUG "foo failed";
+///     ERR    err; process_error(err)
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk(_val: &mut usize) {}
+/// # fn process_error<E>(_err: E) {}
+/// ```
+/// * when ok, evaluate expression with mutable value\
+///   when error, output formatted debug message without err then evaluate expression; discard err
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     mut val; junk(&mut val);
+///     _DEBUG "foo failed: {}", 42;
+///     ERR    process_error()
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk(_val: &mut usize) {}
+/// # fn process_error() {}
+/// ```
+/// * when ok, evaluate expression with mutable value\
+///   when error, output formatted debug message without err then evaluate expression
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     mut val; junk(&mut val);
+///     _DEBUG "foo failed: {}", 42;
+///     ERR    err; process_error(err)
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk(_val: &mut usize) {}
+/// # fn process_error<E>(_err: E) {}
+/// ```
+/// * when ok, evaluate expression with mutable value\
+///   when error, output formatted debug message with custom err then evaluate expression
+///
+/// ```rust
+/// # use macrofied_toolbox::result;
+/// # use cli_toolbox::debug;
+/// result! {
+///     WHEN   foo();
+///     OK     mut val; junk(&mut val);
+///     DEBUG  err; "foo failed: {}, err: {:?}", 42, err;
+///     ERR    process_error()
+/// }
+/// # fn foo() -> Result<usize, &'static str> { Ok(42) }
+/// # fn junk(_val: &mut usize) {}
+/// # fn process_error() {}
+/// ```
 #[macro_export]
 macro_rules! result {
     // when ok, evaluate expression; discard ok
