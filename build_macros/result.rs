@@ -44,6 +44,8 @@ pub fn generate_result_macro() -> io::Result<()> {
         let has_debug = any(dbg_flags);
         let has_error = any(err_flags);
 
+        comment(out, configuration, has_ok, has_debug, has_error)?;
+
         writeln!(out, "    (")?;
         writeln!(out, "        WHEN   $when:expr;")?;
 
@@ -311,6 +313,138 @@ fn macro_logic<W: Write>(
     }
 
     Ok(())
+}
+
+fn comment<W: Write>(
+    out: &mut W, configuration: Configuration,
+    has_ok: bool, has_debug: bool, has_error: bool,
+) -> io::Result<()> {
+    let (
+        ok_blk, ok, ok_val_blk, ok_val, ok_mut_val_blk, ok_mut_val,
+        dbg, dbg_args, _dbg, _dbg_args, dbg_err_args,
+        err, err_err
+    ) = configuration;
+
+    let ok_section = |out: &mut W, grp: &str| {
+        if ok {
+            write!(out, " ok, evaluate expression")
+        } else if ok_val {
+            write!(out, " ok, evaluate expression with value")
+        } else if ok_mut_val {
+            write!(out, " ok, evaluate expression with mutable value")
+        } else if ok_blk {
+            write!(out, " ok, evaluate code block")
+        } else if ok_val_blk {
+            write!(out, " ok, evaluate code block with value")
+        } else if ok_mut_val_blk {
+            write!(out, " ok, evaluate code block with mutable value")
+        } else {
+            panic!("{} ok flag expected", grp);
+        }
+    };
+
+    let debug_section = |out: &mut W, grp: &str, context: &str| {
+        if dbg {
+            write!(out, "{}output debug message", context)
+        } else if dbg_args {
+            write!(out, "{}output formatted debug message", context)
+        } else if _dbg {
+            write!(out, "{}output debug message without err", context)
+        } else if _dbg_args {
+            write!(out, "{}output formatted debug message without err", context)
+        } else if dbg_err_args {
+            write!(out, "{}output formatted debug message with custom err", context)
+        } else {
+            panic!("{} debug flag expected", grp);
+        }
+    };
+
+    let error_section = |out: &mut W, grp: &str, context: &str| {
+        if err || err_err {
+            write!(out, "{}evaluate expression", context)
+        } else {
+            panic!("{} err flag expected", grp);
+        }
+    };
+
+    let discards_ok = |out: &mut W| {
+        if ok || ok_blk {
+            write!(out, "; discard ok")
+        } else {
+            Ok(())
+        }
+    };
+
+    let discards_err = |out: &mut W| {
+        if err && !dbg_err_args {
+            write!(out, "; discard err")
+        } else {
+            Ok(())
+        }
+    };
+
+    let second_when = |out: &mut W| write!(out, "\n    // when");
+
+    const DEBUG_CONTEXT: &str = " error, ";
+
+    write!(out, "    // when")?;
+
+    match (has_ok, has_debug, has_error) {
+        (true, false, false) => {
+            const SECTION: &str = "K--";
+
+            ok_section(out, SECTION)?;
+            discards_ok(out)?;
+        }
+        (true, false, true) => {
+            const SECTION: &str = "K-E";
+
+            ok_section(out, SECTION)?;
+            discards_ok(out)?;
+            second_when(out)?;
+            error_section(out, SECTION, " error, ")?;
+            discards_err(out)?;
+        }
+        (true, true, false) => {
+            const SECTION: &str = "KD-";
+
+            ok_section(out, SECTION)?;
+            discards_ok(out)?;
+            second_when(out)?;
+            debug_section(out, SECTION, DEBUG_CONTEXT)?;
+        }
+        (true, true, true) => {
+            const SECTION: &str = "KDE";
+
+            ok_section(out, SECTION)?;
+            discards_ok(out)?;
+            second_when(out)?;
+            debug_section(out, SECTION, DEBUG_CONTEXT)?;
+            error_section(out, SECTION, " then ")?;
+            discards_err(out)?;
+        }
+        (false, true, false) => {
+            const SECTION: &str = "-D-";
+
+            debug_section(out, SECTION, DEBUG_CONTEXT)?;
+        }
+        (false, true, true) => {
+            const SECTION: &str = "-DE";
+
+            debug_section(out, SECTION, DEBUG_CONTEXT)?;
+            error_section(out, SECTION, " then ")?;
+            discards_err(out)?;
+        }
+        (false, false, true) => {
+            const SECTION: &str = "--E";
+
+            error_section(out, SECTION, " error, ")?;
+            discards_err(out)?;
+        }
+        _ => panic!("unsupported macro definition")
+    }
+
+    writeln!(out)
 }
 
 fn more_than_one<const BITS: usize>(bits: [bool; BITS]) -> bool {

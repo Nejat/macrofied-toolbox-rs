@@ -1,36 +1,42 @@
 ///
 #[macro_export]
 macro_rules! result {
+    // when ok, evaluate expression; discard ok
     (
         WHEN   $when:expr;
         OK     $on_ok:expr
     ) => {
         if $when.is_ok() { $on_ok }
     };
+    // when ok, evaluate code block with value
     (
         WHEN   $when:expr;
         OK     $ok:ident; $on_ok:block
     ) => {
         if let Ok($ok) = $when { $on_ok }
     };
+    // when ok, evaluate expression with value
     (
         WHEN   $when:expr;
         OK     $ok:ident; $on_ok:expr
     ) => {
         if let Ok($ok) = $when { $on_ok }
     };
+    // when ok, evaluate code block with mutable value
     (
         WHEN   $when:expr;
         OK     mut $ok:ident; $on_ok:block
     ) => {
         if let Ok(mut $ok) = $when { $on_ok }
     };
+    // when ok, evaluate expression with mutable value
     (
         WHEN   $when:expr;
         OK     mut $ok:ident; $on_ok:expr
     ) => {
         if let Ok(mut $ok) = $when { $on_ok }
     };
+    // when error, output debug message
     (
         WHEN   $when:expr;
         DEBUG  $dbg:expr
@@ -40,6 +46,7 @@ macro_rules! result {
             cli_toolbox::debug! { ERR concat!($dbg, ": {:?}"), err }
         }
     };
+    // when error, output formatted debug message
     (
         WHEN   $when:expr;
         DEBUG  $dbg:expr, $($arg:expr),+
@@ -49,6 +56,7 @@ macro_rules! result {
             cli_toolbox::debug! { ERR concat!($dbg, ": {:?}"), $($arg),+, err }
         }
     };
+    // when error, output debug message without err
     (
         WHEN   $when:expr;
         _DEBUG $dbg:expr
@@ -58,6 +66,7 @@ macro_rules! result {
             cli_toolbox::debug! { ERR $dbg }
         }
     };
+    // when error, output formatted debug message without err
     (
         WHEN   $when:expr;
         _DEBUG $dbg:expr, $($arg:expr),+
@@ -67,6 +76,7 @@ macro_rules! result {
             cli_toolbox::debug! { ERR $dbg, $($arg),+ }
         }
     };
+    // when error, output formatted debug message with custom err
     (
         WHEN   $when:expr;
         DEBUG  $err:ident; $dbg:expr, $($arg:expr),+
@@ -76,6 +86,7 @@ macro_rules! result {
             cli_toolbox::debug! { ERR $dbg, $($arg),+ }
         }
     };
+    // when error, evaluate expression; discard err
     (
         WHEN   $when:expr;
         ERR    $on_err:expr
@@ -83,6 +94,7 @@ macro_rules! result {
         if $when.is_err() {
         }
     };
+    // when error, evaluate expression
     (
         WHEN   $when:expr;
         ERR    $err:ident; $on_err:expr
@@ -91,6 +103,8 @@ macro_rules! result {
             $on_err
         }
     };
+    // when ok, evaluate code block; discard ok
+    // when error, output debug message
     (
         WHEN   $when:expr;
         OK     $on_ok:block
@@ -107,6 +121,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate code block; discard ok
+    // when error, output formatted debug message
     (
         WHEN   $when:expr;
         OK     $on_ok:block
@@ -123,6 +139,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate code block; discard ok
+    // when error, output debug message without err
     (
         WHEN   $when:expr;
         OK     $on_ok:block
@@ -139,6 +157,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate code block; discard ok
+    // when error, output formatted debug message without err
     (
         WHEN   $when:expr;
         OK     $on_ok:block
@@ -155,6 +175,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate code block; discard ok
+    // when error, output formatted debug message with custom err
     (
         WHEN   $when:expr;
         OK     $on_ok:block
@@ -171,6 +193,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate expression; discard ok
+    // when error, output debug message
     (
         WHEN   $when:expr;
         OK     $on_ok:expr;
@@ -187,6 +211,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate expression; discard ok
+    // when error, output formatted debug message
     (
         WHEN   $when:expr;
         OK     $on_ok:expr;
@@ -203,6 +229,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate expression; discard ok
+    // when error, output debug message without err
     (
         WHEN   $when:expr;
         OK     $on_ok:expr;
@@ -219,6 +247,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate expression; discard ok
+    // when error, output formatted debug message without err
     (
         WHEN   $when:expr;
         OK     $on_ok:expr;
@@ -235,6 +265,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate expression; discard ok
+    // when error, output formatted debug message with custom err
     (
         WHEN   $when:expr;
         OK     $on_ok:expr;
@@ -251,6 +283,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate code block with value
+    // when error, output debug message
     (
         WHEN   $when:expr;
         OK     $ok:ident; $on_ok:block
@@ -267,6 +301,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate code block with value
+    // when error, output formatted debug message
     (
         WHEN   $when:expr;
         OK     $ok:ident; $on_ok:block
@@ -283,6 +319,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate code block with value
+    // when error, output debug message without err
     (
         WHEN   $when:expr;
         OK     $ok:ident; $on_ok:block
@@ -299,6 +337,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate code block with value
+    // when error, output formatted debug message without err
     (
         WHEN   $when:expr;
         OK     $ok:ident; $on_ok:block
@@ -315,6 +355,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate code block with value
+    // when error, output formatted debug message with custom err
     (
         WHEN   $when:expr;
         OK     $ok:ident; $on_ok:block
@@ -331,6 +373,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate expression with value
+    // when error, output debug message
     (
         WHEN   $when:expr;
         OK     $ok:ident; $on_ok:expr;
@@ -347,6 +391,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate expression with value
+    // when error, output formatted debug message
     (
         WHEN   $when:expr;
         OK     $ok:ident; $on_ok:expr;
@@ -363,6 +409,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate expression with value
+    // when error, output debug message without err
     (
         WHEN   $when:expr;
         OK     $ok:ident; $on_ok:expr;
@@ -379,6 +427,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate expression with value
+    // when error, output formatted debug message without err
     (
         WHEN   $when:expr;
         OK     $ok:ident; $on_ok:expr;
@@ -395,6 +445,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate expression with value
+    // when error, output formatted debug message with custom err
     (
         WHEN   $when:expr;
         OK     $ok:ident; $on_ok:expr;
@@ -411,6 +463,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate code block with mutable value
+    // when error, output debug message
     (
         WHEN   $when:expr;
         OK     mut $ok:ident; $on_ok:block
@@ -427,6 +481,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate code block with mutable value
+    // when error, output formatted debug message
     (
         WHEN   $when:expr;
         OK     mut $ok:ident; $on_ok:block
@@ -443,6 +499,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate code block with mutable value
+    // when error, output debug message without err
     (
         WHEN   $when:expr;
         OK     mut $ok:ident; $on_ok:block
@@ -459,6 +517,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate code block with mutable value
+    // when error, output formatted debug message without err
     (
         WHEN   $when:expr;
         OK     mut $ok:ident; $on_ok:block
@@ -475,6 +535,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate code block with mutable value
+    // when error, output formatted debug message with custom err
     (
         WHEN   $when:expr;
         OK     mut $ok:ident; $on_ok:block
@@ -491,6 +553,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate expression with mutable value
+    // when error, output debug message
     (
         WHEN   $when:expr;
         OK     mut $ok:ident; $on_ok:expr;
@@ -507,6 +571,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate expression with mutable value
+    // when error, output formatted debug message
     (
         WHEN   $when:expr;
         OK     mut $ok:ident; $on_ok:expr;
@@ -523,6 +589,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate expression with mutable value
+    // when error, output debug message without err
     (
         WHEN   $when:expr;
         OK     mut $ok:ident; $on_ok:expr;
@@ -539,6 +607,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate expression with mutable value
+    // when error, output formatted debug message without err
     (
         WHEN   $when:expr;
         OK     mut $ok:ident; $on_ok:expr;
@@ -555,6 +625,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate expression with mutable value
+    // when error, output formatted debug message with custom err
     (
         WHEN   $when:expr;
         OK     mut $ok:ident; $on_ok:expr;
@@ -571,6 +643,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate code block; discard ok
+    // when error, output debug message then evaluate expression; discard err
     (
         WHEN   $when:expr;
         OK     $on_ok:block
@@ -587,6 +661,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate code block; discard ok
+    // when error, output debug message then evaluate expression
     (
         WHEN   $when:expr;
         OK     $on_ok:block
@@ -603,6 +679,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate code block; discard ok
+    // when error, output formatted debug message then evaluate expression; discard err
     (
         WHEN   $when:expr;
         OK     $on_ok:block
@@ -619,6 +697,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate code block; discard ok
+    // when error, output formatted debug message then evaluate expression
     (
         WHEN   $when:expr;
         OK     $on_ok:block
@@ -635,6 +715,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate code block; discard ok
+    // when error, output debug message without err then evaluate expression; discard err
     (
         WHEN   $when:expr;
         OK     $on_ok:block
@@ -651,6 +733,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate code block; discard ok
+    // when error, output debug message without err then evaluate expression
     (
         WHEN   $when:expr;
         OK     $on_ok:block
@@ -667,6 +751,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate code block; discard ok
+    // when error, output formatted debug message without err then evaluate expression; discard err
     (
         WHEN   $when:expr;
         OK     $on_ok:block
@@ -683,6 +769,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate code block; discard ok
+    // when error, output formatted debug message without err then evaluate expression
     (
         WHEN   $when:expr;
         OK     $on_ok:block
@@ -699,6 +787,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate code block; discard ok
+    // when error, output formatted debug message with custom err then evaluate expression
     (
         WHEN   $when:expr;
         OK     $on_ok:block
@@ -715,6 +805,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate expression; discard ok
+    // when error, output debug message then evaluate expression; discard err
     (
         WHEN   $when:expr;
         OK     $on_ok:expr;
@@ -731,6 +823,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate expression; discard ok
+    // when error, output debug message then evaluate expression
     (
         WHEN   $when:expr;
         OK     $on_ok:expr;
@@ -747,6 +841,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate expression; discard ok
+    // when error, output formatted debug message then evaluate expression; discard err
     (
         WHEN   $when:expr;
         OK     $on_ok:expr;
@@ -763,6 +859,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate expression; discard ok
+    // when error, output formatted debug message then evaluate expression
     (
         WHEN   $when:expr;
         OK     $on_ok:expr;
@@ -779,6 +877,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate expression; discard ok
+    // when error, output debug message without err then evaluate expression; discard err
     (
         WHEN   $when:expr;
         OK     $on_ok:expr;
@@ -795,6 +895,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate expression; discard ok
+    // when error, output debug message without err then evaluate expression
     (
         WHEN   $when:expr;
         OK     $on_ok:expr;
@@ -811,6 +913,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate expression; discard ok
+    // when error, output formatted debug message without err then evaluate expression; discard err
     (
         WHEN   $when:expr;
         OK     $on_ok:expr;
@@ -827,6 +931,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate expression; discard ok
+    // when error, output formatted debug message without err then evaluate expression
     (
         WHEN   $when:expr;
         OK     $on_ok:expr;
@@ -843,6 +949,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate expression; discard ok
+    // when error, output formatted debug message with custom err then evaluate expression
     (
         WHEN   $when:expr;
         OK     $on_ok:expr;
@@ -859,6 +967,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate code block with value
+    // when error, output debug message then evaluate expression; discard err
     (
         WHEN   $when:expr;
         OK     $ok:ident; $on_ok:block
@@ -875,6 +985,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate code block with value
+    // when error, output debug message then evaluate expression
     (
         WHEN   $when:expr;
         OK     $ok:ident; $on_ok:block
@@ -891,6 +1003,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate code block with value
+    // when error, output formatted debug message then evaluate expression; discard err
     (
         WHEN   $when:expr;
         OK     $ok:ident; $on_ok:block
@@ -907,6 +1021,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate code block with value
+    // when error, output formatted debug message then evaluate expression
     (
         WHEN   $when:expr;
         OK     $ok:ident; $on_ok:block
@@ -923,6 +1039,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate code block with value
+    // when error, output debug message without err then evaluate expression; discard err
     (
         WHEN   $when:expr;
         OK     $ok:ident; $on_ok:block
@@ -939,6 +1057,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate code block with value
+    // when error, output debug message without err then evaluate expression
     (
         WHEN   $when:expr;
         OK     $ok:ident; $on_ok:block
@@ -955,6 +1075,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate code block with value
+    // when error, output formatted debug message without err then evaluate expression; discard err
     (
         WHEN   $when:expr;
         OK     $ok:ident; $on_ok:block
@@ -971,6 +1093,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate code block with value
+    // when error, output formatted debug message without err then evaluate expression
     (
         WHEN   $when:expr;
         OK     $ok:ident; $on_ok:block
@@ -987,6 +1111,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate code block with value
+    // when error, output formatted debug message with custom err then evaluate expression
     (
         WHEN   $when:expr;
         OK     $ok:ident; $on_ok:block
@@ -1003,6 +1129,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate expression with value
+    // when error, output debug message then evaluate expression; discard err
     (
         WHEN   $when:expr;
         OK     $ok:ident; $on_ok:expr;
@@ -1019,6 +1147,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate expression with value
+    // when error, output debug message then evaluate expression
     (
         WHEN   $when:expr;
         OK     $ok:ident; $on_ok:expr;
@@ -1035,6 +1165,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate expression with value
+    // when error, output formatted debug message then evaluate expression; discard err
     (
         WHEN   $when:expr;
         OK     $ok:ident; $on_ok:expr;
@@ -1051,6 +1183,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate expression with value
+    // when error, output formatted debug message then evaluate expression
     (
         WHEN   $when:expr;
         OK     $ok:ident; $on_ok:expr;
@@ -1067,6 +1201,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate expression with value
+    // when error, output debug message without err then evaluate expression; discard err
     (
         WHEN   $when:expr;
         OK     $ok:ident; $on_ok:expr;
@@ -1083,6 +1219,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate expression with value
+    // when error, output debug message without err then evaluate expression
     (
         WHEN   $when:expr;
         OK     $ok:ident; $on_ok:expr;
@@ -1099,6 +1237,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate expression with value
+    // when error, output formatted debug message without err then evaluate expression; discard err
     (
         WHEN   $when:expr;
         OK     $ok:ident; $on_ok:expr;
@@ -1115,6 +1255,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate expression with value
+    // when error, output formatted debug message without err then evaluate expression
     (
         WHEN   $when:expr;
         OK     $ok:ident; $on_ok:expr;
@@ -1131,6 +1273,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate expression with value
+    // when error, output formatted debug message with custom err then evaluate expression
     (
         WHEN   $when:expr;
         OK     $ok:ident; $on_ok:expr;
@@ -1147,6 +1291,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate code block with mutable value
+    // when error, output debug message then evaluate expression; discard err
     (
         WHEN   $when:expr;
         OK     mut $ok:ident; $on_ok:block
@@ -1163,6 +1309,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate code block with mutable value
+    // when error, output debug message then evaluate expression
     (
         WHEN   $when:expr;
         OK     mut $ok:ident; $on_ok:block
@@ -1179,6 +1327,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate code block with mutable value
+    // when error, output formatted debug message then evaluate expression; discard err
     (
         WHEN   $when:expr;
         OK     mut $ok:ident; $on_ok:block
@@ -1195,6 +1345,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate code block with mutable value
+    // when error, output formatted debug message then evaluate expression
     (
         WHEN   $when:expr;
         OK     mut $ok:ident; $on_ok:block
@@ -1211,6 +1363,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate code block with mutable value
+    // when error, output debug message without err then evaluate expression; discard err
     (
         WHEN   $when:expr;
         OK     mut $ok:ident; $on_ok:block
@@ -1227,6 +1381,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate code block with mutable value
+    // when error, output debug message without err then evaluate expression
     (
         WHEN   $when:expr;
         OK     mut $ok:ident; $on_ok:block
@@ -1243,6 +1399,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate code block with mutable value
+    // when error, output formatted debug message without err then evaluate expression; discard err
     (
         WHEN   $when:expr;
         OK     mut $ok:ident; $on_ok:block
@@ -1259,6 +1417,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate code block with mutable value
+    // when error, output formatted debug message without err then evaluate expression
     (
         WHEN   $when:expr;
         OK     mut $ok:ident; $on_ok:block
@@ -1275,6 +1435,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate code block with mutable value
+    // when error, output formatted debug message with custom err then evaluate expression
     (
         WHEN   $when:expr;
         OK     mut $ok:ident; $on_ok:block
@@ -1291,6 +1453,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate expression with mutable value
+    // when error, output debug message then evaluate expression; discard err
     (
         WHEN   $when:expr;
         OK     mut $ok:ident; $on_ok:expr;
@@ -1307,6 +1471,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate expression with mutable value
+    // when error, output debug message then evaluate expression
     (
         WHEN   $when:expr;
         OK     mut $ok:ident; $on_ok:expr;
@@ -1323,6 +1489,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate expression with mutable value
+    // when error, output formatted debug message then evaluate expression; discard err
     (
         WHEN   $when:expr;
         OK     mut $ok:ident; $on_ok:expr;
@@ -1339,6 +1507,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate expression with mutable value
+    // when error, output formatted debug message then evaluate expression
     (
         WHEN   $when:expr;
         OK     mut $ok:ident; $on_ok:expr;
@@ -1355,6 +1525,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate expression with mutable value
+    // when error, output debug message without err then evaluate expression; discard err
     (
         WHEN   $when:expr;
         OK     mut $ok:ident; $on_ok:expr;
@@ -1371,6 +1543,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate expression with mutable value
+    // when error, output debug message without err then evaluate expression
     (
         WHEN   $when:expr;
         OK     mut $ok:ident; $on_ok:expr;
@@ -1387,6 +1561,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate expression with mutable value
+    // when error, output formatted debug message without err then evaluate expression; discard err
     (
         WHEN   $when:expr;
         OK     mut $ok:ident; $on_ok:expr;
@@ -1403,6 +1579,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate expression with mutable value
+    // when error, output formatted debug message without err then evaluate expression
     (
         WHEN   $when:expr;
         OK     mut $ok:ident; $on_ok:expr;
@@ -1419,6 +1597,8 @@ macro_rules! result {
             }
         }
     };
+    // when ok, evaluate expression with mutable value
+    // when error, output formatted debug message with custom err then evaluate expression
     (
         WHEN   $when:expr;
         OK     mut $ok:ident; $on_ok:expr;
