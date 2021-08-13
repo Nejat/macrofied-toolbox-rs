@@ -2,7 +2,7 @@
 name = "macrofied-toolbox"
 version = "0.1.0"
 edition = "2018"
-description = "The macroification of some fundamental rust boilerplate patterns, i.e. option, result, etc."
+description = "This library provides an ergonomic experience of adding debugging messages to rust's Result<T,E> and Option<T> patterns"
 license = "MIT"
 include = ["src/**/*", "Cargo.toml", "LICENSE-MIT", "README.md"]
 homepage = "https://github.com/Nejat/macrofied-toolbox-rs"
@@ -19,7 +19,7 @@ cli-toolbox = { version = "0.5", optional = true }
 log = { version = "0.4", optional = true }
 
 [dev-dependencies]
-cfg-if ="1.0"
+cfg-if = "1.0"
 gag = "1.0"
 version-sync = "0.9"
 
@@ -31,3 +31,8 @@ debug-all = ["debug-option", "debug-result"]
 debug-option = ["debug"]
 debug-result = ["debug"]
 result = []
+
+[[example]]
+name = "result-macro"
+path = "examples/result-macro.rs"
+required-features = ["result"]
