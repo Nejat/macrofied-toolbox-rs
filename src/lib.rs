@@ -14,3 +14,6 @@
 
 #[cfg(feature = "result")]
 mod result;
+
+#[cfg(test)]
+mod tests;

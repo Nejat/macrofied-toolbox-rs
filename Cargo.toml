@@ -18,6 +18,10 @@ features = ["all", "debug-all"]
 cli-toolbox = { version = "0.5", optional = true }
 log = { version = "0.4", optional = true }
 
+[dev-dependencies]
+cfg-if ="1.0"
+gag = "1.0"
+
 [features]
 default = []
 all = ["result"]

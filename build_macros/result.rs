@@ -5,6 +5,7 @@ use std::io::{BufWriter, Write};
 use OnErr::*;
 use OnErrDebug::*;
 use OnOk::*;
+use ResultCase::*;
 
 type Configuration = (OnOk, OnErrDebug, OnErr);
 
@@ -85,6 +86,14 @@ impl OnErr {
         self == ErrExpr
     }
 }
+
+#[derive(Copy, Clone, Eq, PartialEq, Debug)]
+enum ResultCase {
+    OkCase,
+    ErrCase
+}
+
+const RESULT_ERROR: &str = "something ain't right";
 
 pub fn generate_result_macro() -> io::Result<()> {
     let result_source_file = File::create("src/result.rs")?;
@@ -205,6 +214,265 @@ pub fn generate_result_macro() -> io::Result<()> {
     }
 
     writeln!(out, "}}")
+}
+
+pub fn generate_result_macro_tests() -> io::Result<()> {
+    let result_source_file = File::create("src/tests/result_tests.rs")?;
+    let mut out = BufWriter::new(result_source_file);
+
+    writeln!(out, "#![allow(unused_mut)] // tests have mut value cases, however do not mutate values")?;
+    writeln!(out, "#![allow(unused_variables)] // tests")?;
+    writeln!(out, "#![allow(unused_assignments)] // tests")?;
+    writeln!(out)?;
+    writeln!(out, "use crate::capture;")?;
+    writeln!(out, "use crate::expect;")?;
+    writeln!(out, "use crate::result;")?;
+    writeln!(out, "#[cfg(debug_assertions)]")?;
+    writeln!(out, "use cli_toolbox::debug;")?;
+    writeln!(out)?;
+    writeln!(out, "const EXPECTED_BLANK: &str = \"\";")?;
+    writeln!(out)?;
+
+    for configuration in macro_configurations() {
+        const ON_OK_CASE: &str = "_on_ok";
+        const ON_ERR_CASE: &str = "_on_err";
+
+        let mut test_name = test_name(configuration);
+
+        test_name.push_str(ON_OK_CASE);
+
+        write_test_case(&mut out, OkCase, &test_name, configuration)?;
+
+        test_name = test_name.replace(ON_OK_CASE, ON_ERR_CASE);
+
+        write_test_case(&mut out, ErrCase, &test_name, configuration)?;
+    }
+
+    writeln!(out, r#"fn foo(succeed: bool) -> Result<usize, &'static str> {{
+    if succeed {{ Ok(42) }} else {{ Err({:?}) }}
+}}"#, RESULT_ERROR)?;
+
+    Ok(())
+}
+
+fn write_test_case<W: Write>(
+    out: &mut W, case: ResultCase, case_name: &str, configuration: Configuration
+) -> io::Result<()> {
+    let (on_ok, on_dbg, on_err, has_ok, has_debug, has_error) = destructure(configuration);
+
+    writeln!(out, "#[test]")?;
+    writeln!(out, "fn {}() {{", case_name)?;
+
+    let write_expected = |out: &mut W| {
+        if has_ok {
+            let expected_ok = match on_ok {
+                OkExpr | OkBlk if case == OkCase => 21,
+                OkExpr | OkBlk if case == ErrCase => 0,
+                _ if case == OkCase  => 42,
+                _ if case == ErrCase  => 0,
+                _ => unreachable!()
+            };
+
+            writeln!(out, "    let expected_ok = {};", expected_ok)?;
+            writeln!(out, "    let mut actual_ok = 0;")?;
+        }
+
+        if has_error {
+            let expected_err = match on_err {
+                ErrExpr if case == ErrCase => String::from("error encountered"),
+                _ if case == OkCase  => String::default(),
+                _ if case == ErrCase  => format!("ERR: {:?}", RESULT_ERROR),
+                _ => unreachable!()
+            };
+
+            writeln!(out, "    let expected_err = {:?};", expected_err)?;
+            writeln!(out, "    let mut actual_err = String::default();")?;
+        }
+
+        <io::Result<()>>::Ok(())
+    };
+
+    let write_sut = |out: &mut W| {
+        if !has_debug {
+            writeln!(out)?;
+        }
+
+        writeln!(out, "        result! {{")?;
+        writeln!(out, "            WHEN   foo({});", case == OkCase)?;
+
+        match on_ok {
+            NoOk => {}
+            OkExpr =>
+                write!(out, "            OK     actual_ok = 21")?,
+            OkExprVal =>
+                write!(out, "            OK     ok; actual_ok = ok")?,
+            OkExprMutVal =>
+                write!(out, "            OK     mut ok; actual_ok = ok")?,
+            OkBlk =>
+                write!(out, "            OK     {{ actual_ok = 21; }}")?,
+            OkBlkVal =>
+                write!(out, "            OK     ok; {{ actual_ok = ok; }}")?,
+            OkBlkMutVal =>
+                write!(out, "            OK     mut ok; {{ actual_ok = ok }}")?,
+        }
+
+        if (has_error || has_debug) && on_ok.is_expr() {
+            writeln!(out, ";")?;
+        } else if has_ok {
+            writeln!(out)?;
+        }
+
+        if has_debug {
+            match on_dbg {
+                Dbg =>
+                    write!(out, "            DEBUG  \"foo failed\"")?,
+                DbgFmt =>
+                    write!(out, "            DEBUG  \"foo failed - {{}}\", 42")?,
+                DbgNoErr =>
+                    write!(out, "            _DEBUG \"foo failed\"")?,
+                DbgFmtNoErr =>
+                    write!(out, "            _DEBUG \"foo failed - {{}}\", 42")?,
+                DbgCustomErr =>
+                    write!(out, "            DEBUG  err; \"foo failed - {{}}; ERR - {{:?}}\", 42, err")?,
+                NoDbg => unreachable!()
+            }
+
+            if has_error {
+                writeln!(out, ";")?;
+            } else {
+                writeln!(out)?;
+            }
+        }
+
+        match on_err {
+            NoErr => {}
+            ErrExpr =>
+                writeln!(out, "            ERR    actual_err = String::from(\"error encountered\")")?,
+            ErrExprErr =>
+                writeln!(out, "            ERR    err; actual_err = format!(\"ERR: {{:?}}\", err)")?,
+        }
+
+        writeln!(out, "        }}")?;
+
+        if has_debug {
+            writeln!(out, "    }};")?;
+        }
+
+        writeln!(out)?;
+
+        if has_ok {
+            writeln!(out, "    assert_eq!(expected_ok, actual_ok);")?;
+        }
+
+        if has_error {
+            writeln!(out, "    assert_eq!(expected_err, actual_err);")?;
+        }
+
+        <io::Result<()>>::Ok(())
+    };
+
+    if has_debug {
+        let expected_dbg = if case == OkCase {
+            String::from("EXPECTED_BLANK")
+        } else {
+            format!(
+                "\"ERROR: foo failed{}{}{}\\n\"",
+                match on_dbg {
+                    DbgFmt | DbgFmtNoErr | DbgCustomErr => " - 42",
+                    _ => "",
+                },
+                if on_dbg == DbgCustomErr {
+                    "; ERR - "
+                } else if on_dbg.discards_err() {
+                    ""
+                } else {
+                    "; "
+                },
+                match on_dbg {
+                    Dbg | DbgFmt | DbgCustomErr => format!("\\\"{}\\\"", RESULT_ERROR),
+                    _ => String::default()
+                }
+            )
+        };
+
+        writeln!(out, "    expect! {{ EXPECTED_DBG: &str => EXPECTED_BLANK, {} }}", expected_dbg)?;
+
+        write_expected(out)?;
+
+        writeln!(out)?;
+        writeln!(out, "    let (actual_out, actual_dbg) = capture! {{")?;
+
+        write_sut(out)?;
+
+        writeln!(out, "    assert_eq!(EXPECTED_DBG, actual_dbg);")?;
+        writeln!(out)?;
+        writeln!(out, r#"    assert_eq!(
+        EXPECTED_BLANK, actual_out,
+        "alternate io expected to be blank"
+    );"#)?;
+    } else {
+        write_expected(out)?;
+        write_sut(out)?;
+    }
+
+    writeln!(out, "}}")?;
+    writeln!(out)?;
+
+    Ok(())
+}
+
+fn test_name(configuration: Configuration) -> String {
+    let (on_ok, on_dbg, on_err, has_ok, has_debug, has_error) = destructure(configuration);
+    let mut test_name = String::from("when");
+
+    if has_ok {
+        test_name.push_str("_ok_evaluate_");
+        test_name.push_str(
+            match on_ok {
+                OkExpr => "expression",
+                OkExprVal => "expression_use_value",
+                OkExprMutVal => "expression_use_mutable_value",
+                OkBlk => "code_block",
+                OkBlkVal => "code_block_use_value",
+                OkBlkMutVal => "code_block_use_mutable_value",
+                NoOk => unreachable!(),
+            }
+        );
+    }
+
+    if has_debug || has_error {
+        if has_ok { test_name.push_str("_or_when"); }
+
+        test_name.push_str("_err");
+
+        if has_debug {
+            test_name.push('_');
+            test_name.push_str(
+                match on_dbg {
+                    Dbg => "output_debug_message",
+                    DbgFmt => "output_formatted_debug_message",
+                    DbgNoErr => "output_debug_message_discard_err",
+                    DbgFmtNoErr => "output_formatted_debug_message_discard_err",
+                    DbgCustomErr => "output_custom_debug_message",
+                    NoDbg => unreachable!(),
+                }
+            );
+        }
+
+        if has_debug && has_error {
+            test_name.push_str("_then");
+        }
+
+        if on_err != NoErr {
+            test_name.push_str("_evaluate_expression");
+
+            if on_err == ErrExpr {
+                test_name.push_str("_discard_err");
+            }
+        }
+    }
+
+    test_name
 }
 
 fn macro_doc_examples<W: Write>(out: &mut W) -> io::Result<()> {
