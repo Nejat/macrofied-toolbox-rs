@@ -2,9 +2,13 @@ use std::fs::File;
 use std::io;
 use std::io::{BufWriter, Write};
 
+use OnErr::*;
+use OnErrDebug::*;
+use OnOk::*;
+
 type Configuration = (OnOk, OnErrDebug, OnErr);
 
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Copy, Clone, Eq, PartialEq, Debug)]
 enum OnOk {
     NoOk,
     // on ok evaluate expression
@@ -35,7 +39,7 @@ impl OnOk {
     }
 }
 
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Copy, Clone, Eq, PartialEq, Debug)]
 enum OnErrDebug {
     NoDbg,
     // on err output debug message
@@ -47,7 +51,7 @@ enum OnErrDebug {
     // on err output formatted debug message, discard err value
     DbgFmtNoErr,
     // on err output custom debug err message
-    DbgCustomErr
+    DbgCustomErr,
 }
 
 impl OnErrDebug {
@@ -66,25 +70,21 @@ impl OnErrDebug {
     }
 }
 
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Copy, Clone, Eq, PartialEq, Debug)]
 enum OnErr {
     NoErr,
     // on err evaluate expression
     ErrExpr,
     // on err evaluate expression w/error
-    ErrExprErr
+    ErrExprErr,
 }
 
 impl OnErr {
     pub(crate) fn discards_err(self) -> bool {
         // err && !dbg_err_args
-        self == ErrExpr 
+        self == ErrExpr
     }
 }
-
-use OnOk::*;
-use OnErrDebug::*;
-use OnErr::*;
 
 pub fn generate_result_macro() -> io::Result<()> {
     let result_source_file = File::create("src/result.rs")?;
@@ -154,7 +154,7 @@ pub fn generate_result_macro() -> io::Result<()> {
             if has_debug || has_error {
                 writeln!(out, ";")?;
             } else {
-                writeln!(out, )?;
+                writeln!(out)?;
             }
         }
 
@@ -185,7 +185,7 @@ pub fn generate_result_macro() -> io::Result<()> {
             if has_error {
                 writeln!(out, ";")?;
             } else {
-                writeln!(out, )?;
+                writeln!(out)?;
             }
         }
 
@@ -318,7 +318,7 @@ fn macro_logic<W: Write>(out: &mut W, configuration: Configuration) -> io::Resul
         write!(out, "{}            cli_toolbox::debug! {{ ERR ", indent)?;
 
         if on_dbg.outputs_err() {
-            write!(out, "concat!($dbg, \": {{:?}}\")")?;
+            write!(out, "concat!($dbg, \"; {{:?}}\")")?;
         } else {
             write!(out, "$dbg")?;
         }
@@ -358,6 +358,10 @@ fn macro_logic<W: Write>(out: &mut W, configuration: Configuration) -> io::Resul
     };
 
     let when_dbg_err = |out: &mut W, grp: &str| {
+        if !has_error {
+            writeln!(out, "        #[cfg(debug_assertions)]")?;
+        }
+
         write!(out, "        if ")?;
 
         if on_err == ErrExpr || on_dbg.discards_err() {
@@ -383,10 +387,10 @@ fn macro_logic<W: Write>(out: &mut W, configuration: Configuration) -> io::Resul
         }
 
         if has_debug && on_err == ErrExprErr {
-            writeln!(out, )?;
+            writeln!(out)?;
         }
 
-        if on_err == ErrExprErr {
+        if has_error {
             writeln!(out, "            $on_err")?;
         }
 
@@ -412,7 +416,7 @@ fn macro_logic<W: Write>(out: &mut W, configuration: Configuration) -> io::Resul
         if on_ok.is_expr() {
             writeln!(out, ",")
         } else {
-            writeln!(out, )
+            writeln!(out)
         }
     };
 
@@ -469,7 +473,7 @@ fn macro_logic<W: Write>(out: &mut W, configuration: Configuration) -> io::Resul
             writeln!(out, "        #[cfg(any(not(debug_assertions), not(feature = \"debug-result\")))]")?;
             when_ok(out, SECTION)?;
 
-            writeln!(out, )?;
+            writeln!(out)?;
             writeln!(out, "        #[cfg(all(debug_assertions, feature = \"debug-result\"))]")?;
             match_open(out)?;
             ok_match(out, SECTION)?;
@@ -486,7 +490,7 @@ fn macro_logic<W: Write>(out: &mut W, configuration: Configuration) -> io::Resul
             err_match_open(out, SECTION)?;
             debug_cfg(out, "    ")?;
             debug(out, "    ")?;
-            writeln!(out, )?;
+            writeln!(out)?;
             err_expr(out)?;
             err_match_close(out)?;
             match_close(out)?;
@@ -513,7 +517,7 @@ fn macro_logic<W: Write>(out: &mut W, configuration: Configuration) -> io::Resul
 }
 
 fn comment<W: Write>(
-    out: &mut W, configuration: Configuration, prefix1: &str, prefix2: &str, suffix: &str
+    out: &mut W, configuration: Configuration, prefix1: &str, prefix2: &str, suffix: &str,
 ) -> io::Result<()> {
     let (on_ok, on_dbg, on_err, has_ok, has_debug, has_error) = destructure(configuration);
 
@@ -579,7 +583,7 @@ fn comment<W: Write>(
 
     const ERROR_CONTEXT: &str = " error, ";
     const NEXT_CONTEXT: &str = " then ";
-    
+
     const OK: bool = true;
     const NO_OK: bool = false;
     const DBG: bool = true;

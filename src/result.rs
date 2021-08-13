@@ -1493,9 +1493,10 @@ macro_rules! result {
         WHEN   $when:expr;
         DEBUG  $dbg:expr
     ) => {
+        #[cfg(debug_assertions)]
         if let Err(err) = $when {
             #[cfg(feature = "debug-result")]
-            cli_toolbox::debug! { ERR concat!($dbg, ": {:?}"), err }
+            cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), err }
         }
     };
     // when error, output formatted debug message
@@ -1503,9 +1504,10 @@ macro_rules! result {
         WHEN   $when:expr;
         DEBUG  $dbg:expr, $($arg:expr),+
     ) => {
+        #[cfg(debug_assertions)]
         if let Err(err) = $when {
             #[cfg(feature = "debug-result")]
-            cli_toolbox::debug! { ERR concat!($dbg, ": {:?}"), $($arg),+, err }
+            cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), $($arg),+, err }
         }
     };
     // when error, output debug message without err
@@ -1513,6 +1515,7 @@ macro_rules! result {
         WHEN   $when:expr;
         _DEBUG $dbg:expr
     ) => {
+        #[cfg(debug_assertions)]
         if $when.is_err() {
             #[cfg(feature = "debug-result")]
             cli_toolbox::debug! { ERR $dbg }
@@ -1523,6 +1526,7 @@ macro_rules! result {
         WHEN   $when:expr;
         _DEBUG $dbg:expr, $($arg:expr),+
     ) => {
+        #[cfg(debug_assertions)]
         if $when.is_err() {
             #[cfg(feature = "debug-result")]
             cli_toolbox::debug! { ERR $dbg, $($arg),+ }
@@ -1533,6 +1537,7 @@ macro_rules! result {
         WHEN   $when:expr;
         DEBUG  $err:ident; $dbg:expr, $($arg:expr),+
     ) => {
+        #[cfg(debug_assertions)]
         if let Err($err) = $when {
             #[cfg(feature = "debug-result")]
             cli_toolbox::debug! { ERR $dbg, $($arg),+ }
@@ -1544,6 +1549,7 @@ macro_rules! result {
         ERR    $on_err:expr
     ) => {
         if $when.is_err() {
+            $on_err
         }
     };
     // when error, evaluate expression
@@ -1569,7 +1575,7 @@ macro_rules! result {
         match $when {
             Ok(_) => $on_ok
             Err(err) => {
-                    cli_toolbox::debug! { ERR concat!($dbg, ": {:?}"), err }
+                    cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), err }
             }
         }
     };
@@ -1587,7 +1593,7 @@ macro_rules! result {
         match $when {
             Ok(_) => $on_ok
             Err(err) => {
-                    cli_toolbox::debug! { ERR concat!($dbg, ": {:?}"), $($arg),+, err }
+                    cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), $($arg),+, err }
             }
         }
     };
@@ -1659,7 +1665,7 @@ macro_rules! result {
         match $when {
             Ok(_) => $on_ok,
             Err(err) => {
-                    cli_toolbox::debug! { ERR concat!($dbg, ": {:?}"), err }
+                    cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), err }
             }
         }
     };
@@ -1677,7 +1683,7 @@ macro_rules! result {
         match $when {
             Ok(_) => $on_ok,
             Err(err) => {
-                    cli_toolbox::debug! { ERR concat!($dbg, ": {:?}"), $($arg),+, err }
+                    cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), $($arg),+, err }
             }
         }
     };
@@ -1749,7 +1755,7 @@ macro_rules! result {
         match $when {
             Ok($ok) => $on_ok
             Err(err) => {
-                    cli_toolbox::debug! { ERR concat!($dbg, ": {:?}"), err }
+                    cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), err }
             }
         }
     };
@@ -1767,7 +1773,7 @@ macro_rules! result {
         match $when {
             Ok($ok) => $on_ok
             Err(err) => {
-                    cli_toolbox::debug! { ERR concat!($dbg, ": {:?}"), $($arg),+, err }
+                    cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), $($arg),+, err }
             }
         }
     };
@@ -1839,7 +1845,7 @@ macro_rules! result {
         match $when {
             Ok($ok) => $on_ok,
             Err(err) => {
-                    cli_toolbox::debug! { ERR concat!($dbg, ": {:?}"), err }
+                    cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), err }
             }
         }
     };
@@ -1857,7 +1863,7 @@ macro_rules! result {
         match $when {
             Ok($ok) => $on_ok,
             Err(err) => {
-                    cli_toolbox::debug! { ERR concat!($dbg, ": {:?}"), $($arg),+, err }
+                    cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), $($arg),+, err }
             }
         }
     };
@@ -1929,7 +1935,7 @@ macro_rules! result {
         match $when {
             Ok(mut $ok) => $on_ok
             Err(err) => {
-                    cli_toolbox::debug! { ERR concat!($dbg, ": {:?}"), err }
+                    cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), err }
             }
         }
     };
@@ -1947,7 +1953,7 @@ macro_rules! result {
         match $when {
             Ok(mut $ok) => $on_ok
             Err(err) => {
-                    cli_toolbox::debug! { ERR concat!($dbg, ": {:?}"), $($arg),+, err }
+                    cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), $($arg),+, err }
             }
         }
     };
@@ -2019,7 +2025,7 @@ macro_rules! result {
         match $when {
             Ok(mut $ok) => $on_ok,
             Err(err) => {
-                    cli_toolbox::debug! { ERR concat!($dbg, ": {:?}"), err }
+                    cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), err }
             }
         }
     };
@@ -2037,7 +2043,7 @@ macro_rules! result {
         match $when {
             Ok(mut $ok) => $on_ok,
             Err(err) => {
-                    cli_toolbox::debug! { ERR concat!($dbg, ": {:?}"), $($arg),+, err }
+                    cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), $($arg),+, err }
             }
         }
     };
@@ -2107,7 +2113,7 @@ macro_rules! result {
             Ok(_) => $on_ok
             Err(err) => {
                 #[cfg(feature = "debug-result")]
-                cli_toolbox::debug! { ERR concat!($dbg, ": {:?}"), err }
+                cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), err }
 
                 $on_err
             }
@@ -2125,7 +2131,7 @@ macro_rules! result {
             Ok(_) => $on_ok
             Err($err) => {
                 #[cfg(feature = "debug-result")]
-                cli_toolbox::debug! { ERR concat!($dbg, ": {:?}"), $err }
+                cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), $err }
 
                 $on_err
             }
@@ -2143,7 +2149,7 @@ macro_rules! result {
             Ok(_) => $on_ok
             Err(err) => {
                 #[cfg(feature = "debug-result")]
-                cli_toolbox::debug! { ERR concat!($dbg, ": {:?}"), $($arg),+, err }
+                cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), $($arg),+, err }
 
                 $on_err
             }
@@ -2161,7 +2167,7 @@ macro_rules! result {
             Ok(_) => $on_ok
             Err($err) => {
                 #[cfg(feature = "debug-result")]
-                cli_toolbox::debug! { ERR concat!($dbg, ": {:?}"), $($arg),+, $err }
+                cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), $($arg),+, $err }
 
                 $on_err
             }
@@ -2269,7 +2275,7 @@ macro_rules! result {
             Ok(_) => $on_ok,
             Err(err) => {
                 #[cfg(feature = "debug-result")]
-                cli_toolbox::debug! { ERR concat!($dbg, ": {:?}"), err }
+                cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), err }
 
                 $on_err
             }
@@ -2287,7 +2293,7 @@ macro_rules! result {
             Ok(_) => $on_ok,
             Err($err) => {
                 #[cfg(feature = "debug-result")]
-                cli_toolbox::debug! { ERR concat!($dbg, ": {:?}"), $err }
+                cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), $err }
 
                 $on_err
             }
@@ -2305,7 +2311,7 @@ macro_rules! result {
             Ok(_) => $on_ok,
             Err(err) => {
                 #[cfg(feature = "debug-result")]
-                cli_toolbox::debug! { ERR concat!($dbg, ": {:?}"), $($arg),+, err }
+                cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), $($arg),+, err }
 
                 $on_err
             }
@@ -2323,7 +2329,7 @@ macro_rules! result {
             Ok(_) => $on_ok,
             Err($err) => {
                 #[cfg(feature = "debug-result")]
-                cli_toolbox::debug! { ERR concat!($dbg, ": {:?}"), $($arg),+, $err }
+                cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), $($arg),+, $err }
 
                 $on_err
             }
@@ -2431,7 +2437,7 @@ macro_rules! result {
             Ok($ok) => $on_ok
             Err(err) => {
                 #[cfg(feature = "debug-result")]
-                cli_toolbox::debug! { ERR concat!($dbg, ": {:?}"), err }
+                cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), err }
 
                 $on_err
             }
@@ -2449,7 +2455,7 @@ macro_rules! result {
             Ok($ok) => $on_ok
             Err($err) => {
                 #[cfg(feature = "debug-result")]
-                cli_toolbox::debug! { ERR concat!($dbg, ": {:?}"), $err }
+                cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), $err }
 
                 $on_err
             }
@@ -2467,7 +2473,7 @@ macro_rules! result {
             Ok($ok) => $on_ok
             Err(err) => {
                 #[cfg(feature = "debug-result")]
-                cli_toolbox::debug! { ERR concat!($dbg, ": {:?}"), $($arg),+, err }
+                cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), $($arg),+, err }
 
                 $on_err
             }
@@ -2485,7 +2491,7 @@ macro_rules! result {
             Ok($ok) => $on_ok
             Err($err) => {
                 #[cfg(feature = "debug-result")]
-                cli_toolbox::debug! { ERR concat!($dbg, ": {:?}"), $($arg),+, $err }
+                cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), $($arg),+, $err }
 
                 $on_err
             }
@@ -2593,7 +2599,7 @@ macro_rules! result {
             Ok($ok) => $on_ok,
             Err(err) => {
                 #[cfg(feature = "debug-result")]
-                cli_toolbox::debug! { ERR concat!($dbg, ": {:?}"), err }
+                cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), err }
 
                 $on_err
             }
@@ -2611,7 +2617,7 @@ macro_rules! result {
             Ok($ok) => $on_ok,
             Err($err) => {
                 #[cfg(feature = "debug-result")]
-                cli_toolbox::debug! { ERR concat!($dbg, ": {:?}"), $err }
+                cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), $err }
 
                 $on_err
             }
@@ -2629,7 +2635,7 @@ macro_rules! result {
             Ok($ok) => $on_ok,
             Err(err) => {
                 #[cfg(feature = "debug-result")]
-                cli_toolbox::debug! { ERR concat!($dbg, ": {:?}"), $($arg),+, err }
+                cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), $($arg),+, err }
 
                 $on_err
             }
@@ -2647,7 +2653,7 @@ macro_rules! result {
             Ok($ok) => $on_ok,
             Err($err) => {
                 #[cfg(feature = "debug-result")]
-                cli_toolbox::debug! { ERR concat!($dbg, ": {:?}"), $($arg),+, $err }
+                cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), $($arg),+, $err }
 
                 $on_err
             }
@@ -2755,7 +2761,7 @@ macro_rules! result {
             Ok(mut $ok) => $on_ok
             Err(err) => {
                 #[cfg(feature = "debug-result")]
-                cli_toolbox::debug! { ERR concat!($dbg, ": {:?}"), err }
+                cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), err }
 
                 $on_err
             }
@@ -2773,7 +2779,7 @@ macro_rules! result {
             Ok(mut $ok) => $on_ok
             Err($err) => {
                 #[cfg(feature = "debug-result")]
-                cli_toolbox::debug! { ERR concat!($dbg, ": {:?}"), $err }
+                cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), $err }
 
                 $on_err
             }
@@ -2791,7 +2797,7 @@ macro_rules! result {
             Ok(mut $ok) => $on_ok
             Err(err) => {
                 #[cfg(feature = "debug-result")]
-                cli_toolbox::debug! { ERR concat!($dbg, ": {:?}"), $($arg),+, err }
+                cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), $($arg),+, err }
 
                 $on_err
             }
@@ -2809,7 +2815,7 @@ macro_rules! result {
             Ok(mut $ok) => $on_ok
             Err($err) => {
                 #[cfg(feature = "debug-result")]
-                cli_toolbox::debug! { ERR concat!($dbg, ": {:?}"), $($arg),+, $err }
+                cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), $($arg),+, $err }
 
                 $on_err
             }
@@ -2917,7 +2923,7 @@ macro_rules! result {
             Ok(mut $ok) => $on_ok,
             Err(err) => {
                 #[cfg(feature = "debug-result")]
-                cli_toolbox::debug! { ERR concat!($dbg, ": {:?}"), err }
+                cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), err }
 
                 $on_err
             }
@@ -2935,7 +2941,7 @@ macro_rules! result {
             Ok(mut $ok) => $on_ok,
             Err($err) => {
                 #[cfg(feature = "debug-result")]
-                cli_toolbox::debug! { ERR concat!($dbg, ": {:?}"), $err }
+                cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), $err }
 
                 $on_err
             }
@@ -2953,7 +2959,7 @@ macro_rules! result {
             Ok(mut $ok) => $on_ok,
             Err(err) => {
                 #[cfg(feature = "debug-result")]
-                cli_toolbox::debug! { ERR concat!($dbg, ": {:?}"), $($arg),+, err }
+                cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), $($arg),+, err }
 
                 $on_err
             }
@@ -2971,7 +2977,7 @@ macro_rules! result {
             Ok(mut $ok) => $on_ok,
             Err($err) => {
                 #[cfg(feature = "debug-result")]
-                cli_toolbox::debug! { ERR concat!($dbg, ": {:?}"), $($arg),+, $err }
+                cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), $($arg),+, $err }
 
                 $on_err
             }
