@@ -41,7 +41,7 @@ fn main() -> io::Result<()> {
         // * debug messages are conditionally compiled 
         //   and do not output anything in release builds
         // * exceptions are appended to the debug message
-    };
+    }
 
     Ok(())
 }
