@@ -1575,7 +1575,7 @@ macro_rules! result {
         match $when {
             Ok(_) => $on_ok
             Err(err) => {
-                    cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), err }
+                cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), err }
             }
         }
     };
@@ -1593,7 +1593,7 @@ macro_rules! result {
         match $when {
             Ok(_) => $on_ok
             Err(err) => {
-                    cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), $($arg),+, err }
+                cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), $($arg),+, err }
             }
         }
     };
@@ -1611,7 +1611,7 @@ macro_rules! result {
         match $when {
             Ok(_) => $on_ok
             Err(_) => {
-                    cli_toolbox::debug! { ERR $dbg }
+                cli_toolbox::debug! { ERR $dbg }
             }
         }
     };
@@ -1629,7 +1629,7 @@ macro_rules! result {
         match $when {
             Ok(_) => $on_ok
             Err(_) => {
-                    cli_toolbox::debug! { ERR $dbg, $($arg),+ }
+                cli_toolbox::debug! { ERR $dbg, $($arg),+ }
             }
         }
     };
@@ -1647,7 +1647,7 @@ macro_rules! result {
         match $when {
             Ok(_) => $on_ok
             Err($err) => {
-                    cli_toolbox::debug! { ERR $dbg, $($arg),+ }
+                cli_toolbox::debug! { ERR $dbg, $($arg),+ }
             }
         }
     };
@@ -1665,7 +1665,7 @@ macro_rules! result {
         match $when {
             Ok(_) => $on_ok,
             Err(err) => {
-                    cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), err }
+                cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), err }
             }
         }
     };
@@ -1683,7 +1683,7 @@ macro_rules! result {
         match $when {
             Ok(_) => $on_ok,
             Err(err) => {
-                    cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), $($arg),+, err }
+                cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), $($arg),+, err }
             }
         }
     };
@@ -1701,7 +1701,7 @@ macro_rules! result {
         match $when {
             Ok(_) => $on_ok,
             Err(_) => {
-                    cli_toolbox::debug! { ERR $dbg }
+                cli_toolbox::debug! { ERR $dbg }
             }
         }
     };
@@ -1719,7 +1719,7 @@ macro_rules! result {
         match $when {
             Ok(_) => $on_ok,
             Err(_) => {
-                    cli_toolbox::debug! { ERR $dbg, $($arg),+ }
+                cli_toolbox::debug! { ERR $dbg, $($arg),+ }
             }
         }
     };
@@ -1737,7 +1737,7 @@ macro_rules! result {
         match $when {
             Ok(_) => $on_ok,
             Err($err) => {
-                    cli_toolbox::debug! { ERR $dbg, $($arg),+ }
+                cli_toolbox::debug! { ERR $dbg, $($arg),+ }
             }
         }
     };
@@ -1755,7 +1755,7 @@ macro_rules! result {
         match $when {
             Ok($ok) => $on_ok
             Err(err) => {
-                    cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), err }
+                cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), err }
             }
         }
     };
@@ -1773,7 +1773,7 @@ macro_rules! result {
         match $when {
             Ok($ok) => $on_ok
             Err(err) => {
-                    cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), $($arg),+, err }
+                cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), $($arg),+, err }
             }
         }
     };
@@ -1791,7 +1791,7 @@ macro_rules! result {
         match $when {
             Ok($ok) => $on_ok
             Err(_) => {
-                    cli_toolbox::debug! { ERR $dbg }
+                cli_toolbox::debug! { ERR $dbg }
             }
         }
     };
@@ -1809,7 +1809,7 @@ macro_rules! result {
         match $when {
             Ok($ok) => $on_ok
             Err(_) => {
-                    cli_toolbox::debug! { ERR $dbg, $($arg),+ }
+                cli_toolbox::debug! { ERR $dbg, $($arg),+ }
             }
         }
     };
@@ -1827,7 +1827,7 @@ macro_rules! result {
         match $when {
             Ok($ok) => $on_ok
             Err($err) => {
-                    cli_toolbox::debug! { ERR $dbg, $($arg),+ }
+                cli_toolbox::debug! { ERR $dbg, $($arg),+ }
             }
         }
     };
@@ -1845,7 +1845,7 @@ macro_rules! result {
         match $when {
             Ok($ok) => $on_ok,
             Err(err) => {
-                    cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), err }
+                cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), err }
             }
         }
     };
@@ -1863,7 +1863,7 @@ macro_rules! result {
         match $when {
             Ok($ok) => $on_ok,
             Err(err) => {
-                    cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), $($arg),+, err }
+                cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), $($arg),+, err }
             }
         }
     };
@@ -1881,7 +1881,7 @@ macro_rules! result {
         match $when {
             Ok($ok) => $on_ok,
             Err(_) => {
-                    cli_toolbox::debug! { ERR $dbg }
+                cli_toolbox::debug! { ERR $dbg }
             }
         }
     };
@@ -1899,7 +1899,7 @@ macro_rules! result {
         match $when {
             Ok($ok) => $on_ok,
             Err(_) => {
-                    cli_toolbox::debug! { ERR $dbg, $($arg),+ }
+                cli_toolbox::debug! { ERR $dbg, $($arg),+ }
             }
         }
     };
@@ -1917,7 +1917,7 @@ macro_rules! result {
         match $when {
             Ok($ok) => $on_ok,
             Err($err) => {
-                    cli_toolbox::debug! { ERR $dbg, $($arg),+ }
+                cli_toolbox::debug! { ERR $dbg, $($arg),+ }
             }
         }
     };
@@ -1935,7 +1935,7 @@ macro_rules! result {
         match $when {
             Ok(mut $ok) => $on_ok
             Err(err) => {
-                    cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), err }
+                cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), err }
             }
         }
     };
@@ -1953,7 +1953,7 @@ macro_rules! result {
         match $when {
             Ok(mut $ok) => $on_ok
             Err(err) => {
-                    cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), $($arg),+, err }
+                cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), $($arg),+, err }
             }
         }
     };
@@ -1971,7 +1971,7 @@ macro_rules! result {
         match $when {
             Ok(mut $ok) => $on_ok
             Err(_) => {
-                    cli_toolbox::debug! { ERR $dbg }
+                cli_toolbox::debug! { ERR $dbg }
             }
         }
     };
@@ -1989,7 +1989,7 @@ macro_rules! result {
         match $when {
             Ok(mut $ok) => $on_ok
             Err(_) => {
-                    cli_toolbox::debug! { ERR $dbg, $($arg),+ }
+                cli_toolbox::debug! { ERR $dbg, $($arg),+ }
             }
         }
     };
@@ -2007,7 +2007,7 @@ macro_rules! result {
         match $when {
             Ok(mut $ok) => $on_ok
             Err($err) => {
-                    cli_toolbox::debug! { ERR $dbg, $($arg),+ }
+                cli_toolbox::debug! { ERR $dbg, $($arg),+ }
             }
         }
     };
@@ -2025,7 +2025,7 @@ macro_rules! result {
         match $when {
             Ok(mut $ok) => $on_ok,
             Err(err) => {
-                    cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), err }
+                cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), err }
             }
         }
     };
@@ -2043,7 +2043,7 @@ macro_rules! result {
         match $when {
             Ok(mut $ok) => $on_ok,
             Err(err) => {
-                    cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), $($arg),+, err }
+                cli_toolbox::debug! { ERR concat!($dbg, "; {:?}"), $($arg),+, err }
             }
         }
     };
@@ -2061,7 +2061,7 @@ macro_rules! result {
         match $when {
             Ok(mut $ok) => $on_ok,
             Err(_) => {
-                    cli_toolbox::debug! { ERR $dbg }
+                cli_toolbox::debug! { ERR $dbg }
             }
         }
     };
@@ -2079,7 +2079,7 @@ macro_rules! result {
         match $when {
             Ok(mut $ok) => $on_ok,
             Err(_) => {
-                    cli_toolbox::debug! { ERR $dbg, $($arg),+ }
+                cli_toolbox::debug! { ERR $dbg, $($arg),+ }
             }
         }
     };
@@ -2097,7 +2097,7 @@ macro_rules! result {
         match $when {
             Ok(mut $ok) => $on_ok,
             Err($err) => {
-                    cli_toolbox::debug! { ERR $dbg, $($arg),+ }
+                cli_toolbox::debug! { ERR $dbg, $($arg),+ }
             }
         }
     };

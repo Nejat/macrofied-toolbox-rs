@@ -721,6 +721,8 @@ fn macro_logic<W: Write>(out: &mut W, configuration: Configuration) -> io::Resul
     const ERR: bool = true;
     const NO_ERR: bool = false;
 
+    const INDENT: &str = "    ";
+
     match (has_ok, has_debug, has_error) {
         (OK, NO_DBG, NO_ERR) => {
             const SECTION: &str = "K--";
@@ -746,7 +748,7 @@ fn macro_logic<W: Write>(out: &mut W, configuration: Configuration) -> io::Resul
             match_open(out)?;
             ok_match(out, SECTION)?;
             err_match_open(out, SECTION)?;
-            debug(out, "        ")?;
+            debug(out, INDENT)?;
             err_match_close(out)?;
             match_close(out)?;
         }
@@ -756,8 +758,8 @@ fn macro_logic<W: Write>(out: &mut W, configuration: Configuration) -> io::Resul
             match_open(out)?;
             ok_match(out, SECTION)?;
             err_match_open(out, SECTION)?;
-            debug_cfg(out, "    ")?;
-            debug(out, "    ")?;
+            debug_cfg(out, INDENT)?;
+            debug(out, INDENT)?;
             writeln!(out)?;
             err_expr(out)?;
             err_match_close(out)?;
