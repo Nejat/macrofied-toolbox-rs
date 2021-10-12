@@ -23,38 +23,6 @@
 //!
 //! ### `Result<T,E>`
 //! ```no_run
-//! use std::fs::File;
-//! use std::io;
-//! use std::io::{BufWriter, Write};
-//!
-//! use macrofied_toolbox::result;
-//!
-//! #[cfg(debug_assertions)]
-//! use cli_toolbox::debug;
-//!
-//! fn main() -> io::Result<()> {
-//!     let file_name = "foo.txt";
-//!
-//!     // attempts to create a file
-//!     result! {
-//!         WHEN  File::create(file_name);
-//!         // if the file is successfully created, write some content
-//!         OK    file; {
-//!             let mut out = BufWriter::new(file);
-//!
-//!             writeln!(out, "some content")?;
-//!             writeln!(out, "some more content")?;
-//!         }
-//!         // if an exception occurs output debug message to stderr
-//!         DEBUG "problem creating file: {:?}", file_name
-//!
-//!         // * debug messages are conditionally compiled
-//!         //   and do not output anything in release builds
-//!         // * exceptions are appended to the debug message
-//!     }
-//!
-//!     Ok(())
-//! }
 //! ```
 //!
 //! ### `Option<T>`

@@ -16,21 +16,19 @@ features = ["all", "debug-all"]
 
 [dependencies]
 cli-toolbox = { version = "0.5", optional = true }
-log = { version = "0.4", optional = true }
 
 [dev-dependencies]
 cfg-if = "1.0"
-gag = "1.0"
+test-toolbox = "0.1"
 version-sync = "0.9"
 
 [features]
 default = []
 all = ["result"]
 debug = ["cli-toolbox/debug"]
-debug-all = ["debug-option", "debug-result"]
-debug-option = ["debug"]
-debug-result = ["debug"]
+debug-all = ["result-debug"]
 result = []
+result-debug = ["debug"]
 
 [[example]]
 name = "result-macro"
