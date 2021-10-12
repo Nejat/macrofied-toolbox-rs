@@ -35,9 +35,24 @@
 //!
 //! \* _the macros are automatically generated with custom build scripts, including their_ `docs` and `tests`
 
+// #[macro_use]
+// extern crate quote;
+#[macro_use]
+extern crate syn;
+
+use proc_macro::TokenStream;
+
+use quote::ToTokens;
 
 #[cfg(feature = "result")]
 mod result;
 
 #[cfg(test)]
 mod tests;
+
+///
+#[cfg(feature = "result")]
+#[proc_macro]
+pub fn result(input: TokenStream) -> TokenStream {
+    parse_macro_input!(input as result::ResultMacro).into_token_stream().into()
+}

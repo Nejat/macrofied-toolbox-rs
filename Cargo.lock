@@ -82,6 +82,9 @@ version = "0.1.0"
 dependencies = [
  "cfg-if",
  "cli-toolbox",
+ "proc-macro2",
+ "quote",
+ "syn",
  "test-toolbox",
  "version-sync",
 ]
