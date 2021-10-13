@@ -35,8 +35,12 @@
 //!
 //! \* _the macros are automatically generated with custom build scripts, including their_ `docs` and `tests`
 
-// #[macro_use]
-// extern crate quote;
+#[macro_use]
+extern crate bitflags;
+#[macro_use]
+extern crate cfg_if;
+#[macro_use]
+extern crate quote;
 #[macro_use]
 extern crate syn;
 
