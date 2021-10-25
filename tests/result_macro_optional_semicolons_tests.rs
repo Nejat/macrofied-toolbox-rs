@@ -37,9 +37,10 @@ fn when_err_result_with_ok_should_output_and_eval_err_only() {
 
 #[test]
 fn when_err_result_with_ok_should_output_dbg_and_err() {
-    expect! { expected_stderr = "err: foo failed!\n", "dbg: \"foo failed!\"\nerr: foo failed!\n" }
+    expect! { expected_stdout = "", "dbg: \"foo failed!\"\n" }
+    let expected_stderr = "err: foo failed!\n";
 
-    let (_actual_stdout, actual_stderr) = capture! {
+    let (actual_stdout, actual_stderr) = capture! {
         result! {
             @when  foo_err();
             @ok    "this will not output: {:?}", ok;
@@ -48,17 +49,19 @@ fn when_err_result_with_ok_should_output_dbg_and_err() {
         }
     };
 
+    assert_eq!(expected_stdout, actual_stdout);
     assert_eq!(expected_stderr, actual_stderr);
 }
 
 #[test]
 fn when_err_result_with_ok_should_output_dbg_and_err_and_eval_err() {
-    expect! { expected_stderr = "err: foo failed!\n", "dbg: \"foo failed!\"\nerr: foo failed!\n" }
+    expect! { expected_stdout = "", "dbg: \"foo failed!\"\n" }
+    let expected_stderr = "err: foo failed!\n";
 
     let expected = "foo failed!";
     let mut actual = "";
 
-    let (_actual_stdout, actual_stderr) = capture! {
+    let (actual_stdout, actual_stderr) = capture! {
         result! {
             @when  foo_err();
             @ok    "this will not output: {:?}", ok;
@@ -68,15 +71,16 @@ fn when_err_result_with_ok_should_output_dbg_and_err_and_eval_err() {
         }
     };
 
+    assert_eq!(expected_stdout, actual_stdout);
     assert_eq!(expected_stderr, actual_stderr);
     assert_eq!(expected, actual);
 }
 
 #[test]
 fn when_err_result_with_ok_should_output_dbg_only() {
-    expect! { expected_stderr = "", "dbg: \"foo failed!\"\n" }
+    expect! { expected_stdout = "", "dbg: \"foo failed!\"\n" }
 
-    let (_actual_stdout, actual_stderr) = capture! {
+    let (actual_stdout, _actual_stderr) = capture! {
         result! {
             @when  foo_err();
             @ok    "this will not output: {:?}", ok;
@@ -84,7 +88,7 @@ fn when_err_result_with_ok_should_output_dbg_only() {
         }
     };
 
-    assert_eq!(expected_stderr, actual_stderr);
+    assert_eq!(expected_stdout, actual_stdout);
 }
 
 #[test]
@@ -135,9 +139,10 @@ fn when_err_result_without_ok_should_output_and_eval_err_only() {
 
 #[test]
 fn when_err_result_without_ok_should_output_dbg_and_err() {
-    expect! { expected_stderr = "err: foo failed!\n", "dbg: \"foo failed!\"\nerr: foo failed!\n" }
+    expect! { expected_stdout = "", "dbg: \"foo failed!\"\n" }
+    let expected_stderr = "err: foo failed!\n";
 
-    let (_actual_stdout, actual_stderr) = capture! {
+    let (actual_stdout, actual_stderr) = capture! {
         result! {
             @when  foo_err();
             @debug "dbg: {:?}", err;
@@ -145,17 +150,19 @@ fn when_err_result_without_ok_should_output_dbg_and_err() {
         }
     };
 
+    assert_eq!(expected_stdout, actual_stdout);
     assert_eq!(expected_stderr, actual_stderr);
 }
 
 #[test]
 fn when_err_result_without_ok_should_output_dbg_and_err_and_eval_err() {
-    expect! { expected_stderr = "err: foo failed!\n", "dbg: \"foo failed!\"\nerr: foo failed!\n" }
+    expect! { expected_stdout = "", "dbg: \"foo failed!\"\n" }
+    let expected_stderr = "err: foo failed!\n";
 
     let expected = "foo failed!";
     let mut actual = "";
 
-    let (_actual_stdout, actual_stderr) = capture! {
+    let (actual_stdout, actual_stderr) = capture! {
         result! {
             @when  foo_err();
             @debug "dbg: {:?}", err;
@@ -164,22 +171,23 @@ fn when_err_result_without_ok_should_output_dbg_and_err_and_eval_err() {
         }
     };
 
+    assert_eq!(expected_stdout, actual_stdout);
     assert_eq!(expected_stderr, actual_stderr);
     assert_eq!(expected, actual);
 }
 
 #[test]
 fn when_err_result_without_ok_should_output_dbg_only() {
-    expect! { expected_stderr = "", "dbg: \"foo failed!\"\n" }
+        expect! { expected_stdout = "", "dbg: \"foo failed!\"\n" }
 
-    let (_actual_stdout, actual_stderr) = capture! {
+        let (actual_stdout, _actual_stderr) = capture! {
         result! {
             @when  foo_err();
             @debug "dbg: {:?}", err;
         }
     };
 
-    assert_eq!(expected_stderr, actual_stderr);
+    assert_eq!(expected_stdout, actual_stdout);
 }
 
 #[test]

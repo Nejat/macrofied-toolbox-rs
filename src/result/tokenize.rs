@@ -24,7 +24,7 @@ impl ToTokens for ResultMacro {
             #[cfg(all(debug_assertions, feature = "result-debug"))]
             Parts::DEBUG =>
                 branch_only_error(
-                    tokens, when, || build_message(self.debug.as_ref().unwrap()),
+                    tokens, when, || build_message_stdout(self.debug.as_ref().unwrap()),
                 ),
             Parts::ERROR =>
                 branch_only_error(tokens, when, || build_on_error(self.error.as_ref().unwrap())),
@@ -32,7 +32,7 @@ impl ToTokens for ResultMacro {
             Parts::OK_DEBUG =>
                 branch_ok_or_error(
                     tokens, when, self.ok.as_ref().unwrap(),
-                    || build_message(self.debug.as_ref().unwrap()),
+                    || build_message_stdout(self.debug.as_ref().unwrap()),
                 ),
             Parts::OK_ERROR =>
                 branch_ok_or_error(
@@ -141,9 +141,17 @@ fn build_debugged_error(result_macro: &ResultMacro) -> (Option<String>, TokenStr
     }
 }
 
-fn build_message(message: &Message) -> (Option<String>, TokenStream) {
+fn build_message_stderr(message: &Message) -> (Option<String>, TokenStream) {
     let message_fmt = message.build_message();
     let error_message = quote! { eprintln!(#message_fmt); };
+
+    (message.captured.clone(), error_message)
+}
+
+#[cfg(all(debug_assertions, feature = "result-debug"))]
+fn build_message_stdout(message: &Message) -> (Option<String>, TokenStream) {
+    let message_fmt = message.build_message();
+    let error_message = quote! { println!(#message_fmt); };
 
     (message.captured.clone(), error_message)
 }
@@ -160,7 +168,7 @@ fn build_ok_branch(captured: &Option<String>) -> TokenStream {
 #[cfg(all(debug_assertions, feature = "result-debug"))]
 fn build_on_debug_and_on_error(debug: &Message, error: &OnFail) -> (Option<String>, TokenStream) {
     let (captured_err, on_error) = build_on_error(error);
-    let (captured_dbg, on_debug) = build_message(debug);
+    let (captured_dbg, on_debug) = build_message_stdout(debug);
 
     (captured_dbg.and(captured_err), quote! { #on_debug  #on_error; })
 }
@@ -170,7 +178,7 @@ fn build_on_error(error: &OnFail) -> (Option<String>, TokenStream) {
     let mut captured = None;
 
     if error.message.is_some() {
-        let (captured_error, message_error) = build_message(error.message.as_ref().unwrap());
+        let (captured_error, message_error) = build_message_stderr(error.message.as_ref().unwrap());
 
         captured = captured_error;
 
