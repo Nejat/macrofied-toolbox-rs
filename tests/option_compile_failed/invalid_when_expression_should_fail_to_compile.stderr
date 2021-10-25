@@ -1,0 +1,10 @@
+error[E0599]: no method named `is_some` found for type `usize` in the current scope
+ --> tests/option_compile_failed/invalid_when_expression_should_fail_to_compile.rs:4:5
+  |
+4 | /     option! {
+5 | |         @when foo();
+6 | |         @some "will not compile";
+7 | |     }
+  | |_____^ method not found in `usize`
+  |
+  = note: this error originates in the macro `option` (in Nightly builds, run with -Z macro-backtrace for more info)
