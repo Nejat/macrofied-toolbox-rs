@@ -63,7 +63,7 @@ mod option;
 #[cfg(feature = "result")]
 mod result;
 
-#[cfg(all(test, any(feature = "result", feature = "option")))]
+#[cfg(test)]
 mod tests;
 
 ///
