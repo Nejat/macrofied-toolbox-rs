@@ -37,11 +37,11 @@ fn when_none_option_with_some_should_output_and_eval_none_only() {
     assert_eq!(expected, actual);
 
     fn test_try() -> TestOption {
-        let expected_err = "none: example message\n";
+        let expected_stderr = "none: example message\n";
         let expected = false;
         let mut actual = true;
 
-        let (_actual_out, actual_err) = capture! {
+        let (_actual_stdout, actual_stderr) = capture! {
             option! {
                 @when foo_none()?
                 @some "this will not output: {:?}", some
@@ -51,7 +51,7 @@ fn when_none_option_with_some_should_output_and_eval_none_only() {
         };
 
         assert_eq!(expected, actual);
-        assert_eq!(expected_err, actual_err);
+        assert_eq!(expected_stderr, actual_stderr);
 
         Some(0)
     }
@@ -65,9 +65,10 @@ fn when_none_option_with_some_should_output_dbg_and_none() {
     assert_eq!(expected, actual);
 
     fn test_try() -> TestOption {
-        expect! { expected_err = "none: example message\n", "dbg: example message\nnone: example message\n" }
+        expect! { expected_stdout = "", "dbg: example message\n" }
+        let expected_stderr = "none: example message\n";
 
-        let (_actual_out, actual_err) = capture! {
+        let (actual_stdout, actual_stderr) = capture! {
             option! {
                 @when  foo_none()?
                 @some  "this will not output: {:?}", some
@@ -76,7 +77,8 @@ fn when_none_option_with_some_should_output_dbg_and_none() {
             }
         };
 
-        assert_eq!(expected_err, actual_err);
+        assert_eq!(expected_stdout, actual_stdout);
+        assert_eq!(expected_stderr, actual_stderr);
 
         Some(0)
     }
@@ -90,12 +92,13 @@ fn when_none_option_with_some_should_output_dbg_and_none_and_eval_err() {
     assert_eq!(expected, actual);
 
     fn test_try() -> TestOption {
-        expect! { expected_err = "none: example message\n", "dbg: example message\nnone: example message\n" }
+        expect! { expected_stdout = "", "dbg: example message\n" }
+        let expected_stderr = "none: example message\n";
 
         let expected = false;
         let mut actual = true;
 
-        let (_actual_out, actual_err) = capture! {
+        let (actual_stdout, actual_stderr) = capture! {
             option! {
                 @when  foo_none()?
                 @some  "this will not output: {:?}", some
@@ -105,7 +108,8 @@ fn when_none_option_with_some_should_output_dbg_and_none_and_eval_err() {
             }
         };
 
-        assert_eq!(expected_err, actual_err);
+        assert_eq!(expected_stdout, actual_stdout);
+        assert_eq!(expected_stderr, actual_stderr);
         assert_eq!(expected, actual);
 
         Some(0)
@@ -120,9 +124,9 @@ fn when_none_option_with_some_should_output_dbg_only() {
     assert_eq!(expected, actual);
 
     fn test_try() -> TestOption {
-        expect! { expected_err = "", "dbg: example message\n" }
+        expect! { expected_stdout = "", "dbg: example message\n" }
 
-        let (_actual_out, actual_err) = capture! {
+        let (actual_stdout, _actual_stderr) = capture! {
             option! {
                 @when  foo_none()?
                 @some  "this will not output: {:?}", some
@@ -130,7 +134,7 @@ fn when_none_option_with_some_should_output_dbg_only() {
             }
         };
 
-        assert_eq!(expected_err, actual_err);
+        assert_eq!(expected_stdout, actual_stdout);
 
         Some(0)
     }
@@ -144,9 +148,9 @@ fn when_none_option_with_some_should_output_none_only() {
     assert_eq!(expected, actual);
 
     fn test_try() -> TestOption {
-        let expected_err = "none: example message\n";
+        let expected_stderr = "none: example message\n";
 
-        let (_actual_out, actual_err) = capture! {
+        let (_actual_stdout, actual_stderr) = capture! {
             option! {
                 @when foo_none()?
                 @some "this will not output: {:?}", some
@@ -154,7 +158,7 @@ fn when_none_option_with_some_should_output_none_only() {
             }
         };
 
-        assert_eq!(expected_err, actual_err);
+        assert_eq!(expected_stderr, actual_stderr);
 
         Some(0)
     }
@@ -190,11 +194,11 @@ fn when_none_option_without_some_should_output_and_eval_none_only() {
     assert_eq!(expected, actual);
 
     fn test_try() -> TestOption {
-        let expected_err = "none: example message\n";
+        let expected_stderr = "none: example message\n";
         let expected = false;
         let mut actual = true;
 
-        let (_actual_out, actual_err) = capture! {
+        let (_actual_stdout, actual_stderr) = capture! {
             option! {
                 @when  foo_none()?
                 @none "none: example message";
@@ -203,7 +207,7 @@ fn when_none_option_without_some_should_output_and_eval_none_only() {
         };
 
         assert_eq!(expected, actual);
-        assert_eq!(expected_err, actual_err);
+        assert_eq!(expected_stderr, actual_stderr);
 
         Some(0)
     }
@@ -217,9 +221,10 @@ fn when_none_option_without_some_should_output_dbg_and_none() {
     assert_eq!(expected, actual);
 
     fn test_try() -> TestOption {
-        expect! { expected_err = "none: example message\n", "dbg: example message\nnone: example message\n" }
+        expect! { expected_stdout = "", "dbg: example message\n" }
+        let expected_stderr = "none: example message\n";
 
-        let (_actual_out, actual_err) = capture! {
+        let (actual_stdout, actual_stderr) = capture! {
             option! {
                 @when  foo_none()?
                 @debug "dbg: example message"
@@ -227,7 +232,8 @@ fn when_none_option_without_some_should_output_dbg_and_none() {
             }
         };
 
-        assert_eq!(expected_err, actual_err);
+        assert_eq!(expected_stdout, actual_stdout);
+        assert_eq!(expected_stderr, actual_stderr);
 
         Some(0)
     }
@@ -241,12 +247,13 @@ fn when_none_option_without_some_should_output_dbg_and_none_and_eval_err() {
     assert_eq!(expected, actual);
 
     fn test_try() -> TestOption {
-        expect! { expected_err = "none: example message\n", "dbg: example message\nnone: example message\n" }
+        expect! { expected_stdout = "", "dbg: example message\n" }
+        let expected_stderr = "none: example message\n";
 
         let expected = false;
         let mut actual = true;
 
-        let (_actual_out, actual_err) = capture! {
+        let (actual_stdout, actual_stderr) = capture! {
             option! {
                 @when  foo_none()?
                 @debug "dbg: example message"
@@ -255,7 +262,8 @@ fn when_none_option_without_some_should_output_dbg_and_none_and_eval_err() {
             }
         };
 
-        assert_eq!(expected_err, actual_err);
+        assert_eq!(expected_stdout, actual_stdout);
+        assert_eq!(expected_stderr, actual_stderr);
         assert_eq!(expected, actual);
 
         Some(0)
@@ -270,16 +278,16 @@ fn when_none_option_without_some_should_output_dbg_only() {
     assert_eq!(expected, actual);
 
     fn test_try() -> TestOption {
-        expect! { expected_err = "", "dbg: example message\n" }
+        expect! { expected_stdout = "", "dbg: example message\n" }
 
-        let (_actual_out, actual_err) = capture! {
+        let (actual_stdout, _actual_stderr) = capture! {
             option! {
                 @when  foo_none()?
                 @debug "dbg: example message"
             }
         };
 
-        assert_eq!(expected_err, actual_err);
+        assert_eq!(expected_stdout, actual_stdout);
 
         Some(0)
     }
@@ -293,16 +301,16 @@ fn when_none_option_without_some_should_output_none_only() {
     assert_eq!(expected, actual);
 
     fn test_try() -> TestOption {
-        let expected_err = "none: example message\n";
+        let expected_stderr = "none: example message\n";
 
-        let (_actual_out, actual_err) = capture! {
+        let (_actual_stdout, actual_stderr) = capture! {
             option! {
                 @when foo_none()?
                 @none "none: example message"
             }
         };
 
-        assert_eq!(expected_err, actual_err);
+        assert_eq!(expected_stderr, actual_stderr);
 
         Some(0)
     }
@@ -316,16 +324,16 @@ fn when_some_only_custom_result_should_output_some() {
     assert_eq!(expected, actual);
 
     fn test_try() -> TestOption {
-        let expected_out = "some: 42\n";
+        let expected_stdout = "some: 42\n";
 
-        let (actual_out, _actual_err) = capture! {
+        let (actual_stdout, _actual_stderr) = capture! {
             option! {
                 @when foo_some()?
                 @some (foo) => "some: {}", foo
             }
         };
 
-        assert_eq!(expected_out, actual_out);
+        assert_eq!(expected_stdout, actual_stdout);
 
         Some(42)
     }
@@ -383,16 +391,16 @@ fn when_some_only_result_should_output_some() {
     assert_eq!(expected, actual);
 
     fn test_try() -> TestOption {
-        let expected_out = "some: 42\n";
+        let expected_stdout = "some: 42\n";
 
-        let (actual_out, _actual_err) = capture! {
+        let (actual_stdout, _actual_stderr) = capture! {
             option! {
                 @when foo_some()?
                 @some (baz) => "some: {}", baz
             }
         };
 
-        assert_eq!(expected_out, actual_out);
+        assert_eq!(expected_stdout, actual_stdout);
 
         Some(42)
     }
@@ -406,9 +414,9 @@ fn when_some_result_should_output_some() {
     assert_eq!(expected, actual);
 
     fn test_try() -> TestOption {
-        let expected_out = "some: 42\n";
+        let expected_stdout = "some: 42\n";
 
-        let (actual_out, _actual_err) = capture! {
+        let (actual_stdout, _actual_stderr) = capture! {
             option! {
                 @when  foo_some()?
                 @some  (baz) => "some: {}", baz
@@ -418,7 +426,7 @@ fn when_some_result_should_output_some() {
             }
         };
 
-        assert_eq!(expected_out, actual_out);
+        assert_eq!(expected_stdout, actual_stdout);
 
         Some(42)
     }
