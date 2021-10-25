@@ -4,43 +4,42 @@ This library provides an ergonomic experience of adding debugging messages to ru
 `Result<T,E>` and `Option<T>` patterns
 
 Just like the [`cli-toolbox`](https://crates.io/crates/cli-toolbox) crate, that the debug logic
-is based on, this is not a logging alternative; it's intended to produce debugging output to be
+resembles, this is not a logging alternative; it's intended to produce debugging output to be
 used during application development.
 
 Although the macros were designed to make debugging more ergonomic, they include variations that 
-do not include debugging to provide coding consistency, so you have the option use the same syntax
-consistently throughout your crate.
+do not include debugging to provide coding consistency, so you have the option to use the same syntax
+consistently throughout your project.
 
 ### `Result<T,E>`
 ```rust
 use std::fs::File;
 use std::io;
 use std::io::{BufWriter, Write};
-
 use macrofied_toolbox::result;
-
-#[cfg(debug_assertions)]
-use cli_toolbox::debug;
 
 fn main() -> io::Result<()> {
     let file_name = "foo.txt";
-    
-    // attempts to create a file 
+
+    // attempts to create a file
     result! {
-        WHEN  File::create(file_name);
+        // * if you use the try "?" punctuation, the result! macro will
+        //   still output debug or error before returning the Result::Err
+        @when  File::create(file_name)?;
         // if the file is successfully created, write some content
-        OK    file; {
+        @ok    (file) => {
             let mut out = BufWriter::new(file);
-            
+
             writeln!(out, "some content")?;
             writeln!(out, "some more content")?;
         }
-        // if an exception occurs output debug message to stderr
-        DEBUG "problem creating file: {:?}", file_name
-        
-        // * debug messages are conditionally compiled 
+        // if an exception occurs output debug message to stdout
+        @debug "problem creating file: {:?} - {}", file_name, err
+
+        // * debug messages are conditionally compiled
         //   and do not output anything in release builds
-        // * exceptions are appended to the debug message
+        // * "err" contains the Result::Err value and can be optionally referenced,
+        //   it is discarded if it is not referenced
     }
 
     Ok(())
@@ -49,13 +48,48 @@ fn main() -> io::Result<()> {
 
 ### `Option<T>`
 
-```
-.
-.
-.
-```
+```rust
+use std::fs::File;
+use std::io;
+use std::io::{BufWriter, Write};
+use std::process::exit;
 
-\* _the macros are automatically generated with custom build scripts, including their_ `docs` and `tests`
+use macrofied_toolbox::option;
+
+fn main() {
+    let file_name = "foo.txt";
+
+    if let None = example(file_name) {
+        eprintln!("failed to create {:?} file!", file_name);
+        exit(-1);
+    }
+}
+
+fn example(file_name: &str) -> Option<()> {
+    // attempts to create a file
+    option! {
+        // * if you use the try "?" punctuation, the result! macro will
+        //   still output debug or error before returning the Result::Err
+        @when  File::create(file_name).ok()?;
+        // if the file is successfully created, write some content
+        @some  (file) => {
+            let mut out = BufWriter::new(file);
+
+            writeln!(out, "some content").ok()?;
+            writeln!(out, "some more content").ok()?;
+        }
+        // if an exception occurs output debug message to stdout
+        @debug "problem creating file: {:?}", file_name
+
+        // * debug messages are conditionally compiled
+        //   and do not output anything in release builds
+        // * "err" contains the Result::Err value and can be optionally referenced,
+        //   it is discarded if it is not referenced
+    }
+
+    Some(())
+}
+```
 
 ## Resources
 * [Docs](https://docs.rs/macrofied-toolbox/0.1.0/macrofied_toolbox/) for more detailed information
@@ -63,35 +97,30 @@ fn main() -> io::Result<()> {
 
 ## Usage
 
-Each macro is gated by a feature.
-
-No feature is mutually exclusive and can be combined as needed.
+Each macro is gated by a feature; `all`, `option` or `result` respectively.
 
 ```toml
 [dependencies]
 macrofied-toolbox = { version = "0.1", features = ["option", "result"] }
 ```
 
-### Additional Feature
+### Features
 
-`macrofied-toolbox` can optionally use the [`cli-toolbox`](https://github.com/Nejat/cli-toolbox-rs) crate to output 
-debug to the console by enabling an of these features
+Although `macrofied-toolbox` was designed to make adding debugging output more ergonomic,
+the generation of debug output is gated by an optional `X-debug` feature. 
 
-* `debug-all` - enables console debugging for all the features enabled
-* `debug-option` - enables console debugging for the `option!` macro
-* `debug-result` - enables console debugging for the `result!` macro
+\* _Debug output is only effective in unoptimized builds_ \*
+
+* `all-debug` - enables console debugging and both features
+* `option-debug` - enables console debugging and the `option!` macro
+* `result-debug` - enables console debugging and the `result!` macro
 
 ## Roadmap
 
-* [ ] `option!` - handles an `Option<T>` of an expression
-* [ ] enhance `result!` 
-  * [ ] pass `Ok<t>` value through
-  * [ ] add `?` syntax
-* [ ] support more than mutable `Ok<T>` values
-* [ ] debugging for `Ok<T>` values
-* [ ] logging for both `Ok<T>` and `Err<E>`
-* [ ] other patterns?
+* [ ] support mutable `Ok<T>` and `Some<T>` values
+* [ ] ~~logging for both Ok\<T\> and Err\<E\>~~
+* [ ] ~~other patterns?~~
 
 ## Implemented
 * [x] `result!` - handles a `Result<T,E>` of an expression
-
+* [x] `option!` - handles an `Option<T>` of an expression
