@@ -12,7 +12,7 @@ authors = ["Nejat<nejatoz@gmail.com>"]
 categories = ["rust-pattern"]
 
 [package.metadata.docs.rs]
-features = ["all", "debug-all"]
+features = ["all-debug"]
 
 [lib]
 proc-macro = true
@@ -37,6 +37,7 @@ path = "tests/tests.rs"
 [features]
 default = []
 all = ["option", "result"]
+all-debug = ["option-debug", "result-debug"]
 option = []
 option-debug = ["option"]
 result = []
