@@ -130,14 +130,123 @@ mod result;
 #[cfg(test)]
 mod tests;
 
+/// a macro for making debugging more ergonomic when handling `Option<T>` results
 ///
+/// ## Anotomy of the `option!` macro
+///
+/// The `option!` macro consists of a mandatory `@when` section and one to three
+/// optional evaluation sections `@some`, `@debug` and/or `@none`, at least one must be
+/// defined.
+///
+/// <br/>__\* _any_ `<expr>`_s which are code blocks, i.e._ `{ ... }` _, can not have an optional
+/// section terminator_ `;`__<br/>
+///
+/// ### `@when`
+///
+/// The `@when` section is defined as `[@when] <expr>[?][;]`
+///
+/// * `@when` - the identifier itself is optional
+/// * `<expr>` - an expression that must  evaluate to an `Option<T>` value
+/// * `[?]` - the try operator will return `None` after completing `@debug` and/or `@none`
+/// * `[;]` - optional section terminator
+///
+/// __`Example A:`__ `@when foo();`<br/>
+/// __`Example B:`__ `@when foo()?;`<br/>
+///
+/// ### `@some`
+///
+/// The `@some` section is defined as `@some [(identifier) =>]<message|expr>[;]`
+///
+/// \* _only evaluates if the result of the `@when` expression is_ `Option::Some`
+///
+/// * `@some` - mandatory section identifier
+/// * `[(identifier) =>]` - a custom defined identifier which is available in
+///                           the `message` or `expr`
+/// * `<message|expr>` - can access the custom defined identifier or the `some` keyword
+///     * `message` - outputs to `stdout` with a `println!` statement, therefore has the same `args`
+///     * `expr` - any expression to evaluate
+/// * `[;]` - optional section terminator
+///
+/// __`Example A:`__ `@some "success: {}", some;`<br/>
+/// __`Example B:`__ `@some (foo) => "success: {}", foo;`<br/>
+/// __`Example C:`__ `@some (foo) => { success(foo); }`<br/>
+///
+/// ### `@debug`
+///
+/// The `@debug` section is defined as `@debug <message>[;]`
+///
+/// \* _only evaluates if the result of the `@when` expression is_ `Option::None`
+///
+/// * `@debug` - mandatory section identifier
+/// * `message` - outputs to `stdout` with a `println!` statement, therefore has the same `args`
+/// * `[;]` - optional section terminator
+///
+/// __`Example:`__ `@debug "dbg: foo failed!";`
+///
+/// ### `@none`
+///
+/// The `@none` section is defined as `@none [<message>[;]][<expr>][;]`, must
+/// provide at least a `message` and/or `expr`
+///
+/// \* _only evaluates if the result of the `@when` expression is_ `Option::None`
+///
+/// * `@none` - mandatory section identifier
+/// * `[message][;]` - _optional_, outputs to `stderr` with a `println!` statement, therefore
+///                    has the same `args`, requires the `;` terminator if an `<expr>[;]` is
+///                    also defined
+/// * `[<expr>]` - _optional_, any expression to evaluate
+/// * `[;]` - optional section terminator
+///
+/// __`Example A:`__ `@none { on_fail_baz(); }`<br/>
+/// __`Example B:`__ `@none "err: foo failed!"`<br/>
+/// __`Example C:`__ `@none "err: foo failed!"; { on_fail_baz(); }`<br/>
+///
+/// ## Example
+///
+/// ```no_run
+/// # use std::fs::File;
+/// # use std::io;
+/// # use std::io::{BufWriter, Write};
+/// # use std::process::exit;
+/// use macrofied_toolbox::option;
+///
+/// fn main() {
+///     let file_name = "foo.txt";
+///
+///     if let None = example(file_name) {
+///         eprintln!("failed to create {:?} file!", file_name);
+///         exit(-1);
+///     }
+/// }
+///
+/// fn example(file_name: &str) -> Option<()> {
+///     option! {
+///         @when  File::create(file_name).ok()?;
+///         @some  (file) => {
+///                    let mut out = BufWriter::new(file);
+///
+///                    writeln!(out, "some content").ok()?;
+///                    writeln!(out, "some more content").ok()?;
+///                }
+///         @debug "problem creating file: {:?}", file_name;
+///         @none  "{:?} failed; attempting recovery ...", file_name;
+///                recovery_from_fail(file_name);
+///     }
+///
+///     Some(())
+/// }
+///
+/// fn recovery_from_fail(_: &str) {
+///     // some very import recovery logic
+/// }
+/// ```
 #[cfg(feature = "option")]
 #[proc_macro]
 pub fn option(input: TokenStream) -> TokenStream {
     parse_macro_input!(input as option::OptionMacro).into_token_stream().into()
 }
 
-///
+/// a macro for making debugging more ergonomic when handling `Result<T,E>` results
 #[cfg(feature = "result")]
 #[proc_macro]
 pub fn result(input: TokenStream) -> TokenStream {
