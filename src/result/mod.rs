@@ -1,69 +1,43 @@
-use proc_macro2::TokenStream;
-use syn::{Expr, Lit};
+#[cfg(feature = "trace")]
+use std::fmt::{self, Display, Formatter};
 
+use crate::common::{Message, OnFail, OnSuccess, WhenExpr};
 use crate::result::parts::Parts;
 
-mod kw;
 mod parse;
 mod parts;
 mod tokenize;
 
-pub(crate) struct ResultMacro {
+pub struct ResultMacro {
     when: WhenExpr,
-    ok: Option<OnOk>,
+    ok: Option<OnSuccess>,
     debug: Option<Message>,
-    error: Option<OnError>,
+    error: Option<OnFail>,
 }
 
-struct WhenExpr {
-    expr: Expr,
-    tried: bool,
-}
+#[cfg(feature = "trace")]
+impl Display for ResultMacro {
+    fn fmt(&self, fmt: &mut Formatter<'_>) -> fmt::Result {
+        let ok = format_option(&self.ok);
+        let debug = format_option(&self.debug);
+        let error = format_option(&self.error);
 
-enum OnOk {
-    Expr(OnExpr),
-    Message(Message),
-}
+        return write!(
+            fmt, "{{\n  when: {},\n  ok: {},\n  debug: {},\n  error: {}\n}}",
+            self.when, ok, debug, error
+        );
 
-struct OnExpr {
-    captured: bool,
-    expr: Expr,
-}
-
-struct Message {
-    args: Option<Vec<Expr>>,
-    captured: bool,
-    fmt: Lit,
-}
-
-impl Message {
-    fn build_message(&self) -> TokenStream {
-        let mut tokens = TokenStream::new();
-
-        let fmt = &self.fmt;
-
-        tokens.extend(quote! { #fmt });
-
-        if let Some(args) = &self.args {
-            for arg in args {
-                tokens.extend(quote! { , #arg });
-            }
+        //noinspection DuplicatedCode
+        fn format_option<T: Display>(source: &Option<T>) -> String {
+            if let Some(some) = source { format!("{}", some) } else { "None".to_string() }
         }
-
-        tokens
     }
-}
-
-struct OnError {
-    message: Option<Message>,
-    expr: Option<OnExpr>,
 }
 
 impl ResultMacro {
     fn definition(&self) -> Parts {
         (if self.ok.is_some() { Parts::OK } else { Parts::NONE }) |
             (if self.debug.is_some() { Parts::DEBUG } else { Parts::NONE }) |
-            (if self.error.is_some() && self.error.as_ref().unwrap().message.is_some() { Parts::ERROR } else { Parts::NONE }) |
-            (if self.error.is_some() && self.error.as_ref().unwrap().expr.is_some() { Parts::ERR_EXPR } else { Parts::NONE })
+            (if self.error.is_some() { Parts::ERROR } else { Parts::NONE })
     }
 }

@@ -39,6 +39,7 @@ default = []
 all = []
 result = []
 result-debug = ["result"]
+trace = [] # feature should only be used for tests or examples
 
 [[example]]
 name = "result-macro"

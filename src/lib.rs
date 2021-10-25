@@ -35,23 +35,32 @@
 //!
 //! \* _the macros are automatically generated with custom build scripts, including their_ `docs` and `tests`
 
+#[cfg(feature = "result")]
 #[macro_use]
 extern crate bitflags;
+#[cfg(feature = "result")]
 #[macro_use]
 extern crate cfg_if;
+#[cfg(feature = "result")]
 #[macro_use]
 extern crate quote;
+#[cfg(feature = "result")]
 #[macro_use]
 extern crate syn;
 
+#[cfg(feature = "result")]
 use proc_macro::TokenStream;
 
+#[cfg(feature = "result")]
 use quote::ToTokens;
+
+#[cfg(feature = "result")]
+mod common;
 
 #[cfg(feature = "result")]
 mod result;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "result"))]
 mod tests;
 
 ///

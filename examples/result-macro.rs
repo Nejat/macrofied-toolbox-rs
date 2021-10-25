@@ -8,15 +8,15 @@ fn main() -> Result<(), &'static str> {
     if break_test {
         result! {
             @when  foo(false)?;
-            @ok    "will not be seen: {:?}", ok;
+            @ok    (baz) => "will not be seen: {:?}", baz;
             @debug "dbg msg: {}", -24;
-            @error "err msg: {:?} - {}", err, -42;
-                   { println!("error expression") }
+            @error "err msg: {}", -42;
+                   { println!("error expression, {}", err) }
         }
     } else {
         result! {
             @when  foo(true)?;
-            @ok    "all ok: {:?}", ok;
+            @ok    (baz) => "all ok: {:?} {}", baz + 1, 42;
             @debug "dbg msg will not be seen: {}", -24;
             @error "err msg will not be seen: {:?} - {}", err, -42;
                    { println!("error expression not run") }
