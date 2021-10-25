@@ -36,6 +36,24 @@ impl Display for Message {
     }
 }
 
+impl Message {
+    pub fn build_message(&self) -> TokenStream {
+        let mut tokens = TokenStream::new();
+
+        let fmt = &self.fmt;
+
+        tokens.extend(quote! { #fmt });
+
+        if let Some(args) = &self.args {
+            for arg in args {
+                tokens.extend(quote! { , #arg });
+            }
+        }
+
+        tokens
+    }
+}
+
 pub struct OnExpr {
     pub captured: Option<String>,
     pub expr: Expr,
@@ -107,23 +125,5 @@ impl Display for WhenExpr {
         write!(
             fmt, "{{ expr: \"{}\", tried: {} }}", self.expr.to_token_stream(), self.tried
         )
-    }
-}
-
-impl Message {
-    pub fn build_message(&self) -> TokenStream {
-        let mut tokens = TokenStream::new();
-
-        let fmt = &self.fmt;
-
-        tokens.extend(quote! { #fmt });
-
-        if let Some(args) = &self.args {
-            for arg in args {
-                tokens.extend(quote! { , #arg });
-            }
-        }
-
-        tokens
     }
 }

@@ -20,9 +20,7 @@ impl ToTokens for ResultMacro {
                 branch_only_ok(tokens, when, self.ok.as_ref().unwrap()),
             #[cfg(not(all(debug_assertions, feature = "result-debug")))]
             Parts::DEBUG =>
-                branch_only_error(
-                    tokens, when, || (None, TokenStream::new()),
-                ),
+                branch_only_error(tokens, when, || (None, TokenStream::new())),
             #[cfg(all(debug_assertions, feature = "result-debug"))]
             Parts::DEBUG =>
                 branch_only_error(

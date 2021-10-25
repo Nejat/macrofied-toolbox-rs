@@ -35,33 +35,43 @@
 //!
 //! \* _the macros are automatically generated with custom build scripts, including their_ `docs` and `tests`
 
-#[cfg(feature = "result")]
+#[cfg(any(feature = "result", feature = "option"))]
 #[macro_use]
 extern crate bitflags;
-#[cfg(feature = "result")]
+#[cfg(any(feature = "result", feature = "option"))]
 #[macro_use]
 extern crate cfg_if;
-#[cfg(feature = "result")]
+#[cfg(any(feature = "result", feature = "option"))]
 #[macro_use]
 extern crate quote;
-#[cfg(feature = "result")]
+#[cfg(any(feature = "result", feature = "option"))]
 #[macro_use]
 extern crate syn;
 
-#[cfg(feature = "result")]
+#[cfg(any(feature = "result", feature = "option"))]
 use proc_macro::TokenStream;
 
-#[cfg(feature = "result")]
+#[cfg(any(feature = "result", feature = "option"))]
 use quote::ToTokens;
 
-#[cfg(feature = "result")]
+#[cfg(any(feature = "option", feature = "result"))]
 mod common;
+
+#[cfg(feature = "option")]
+mod option;
 
 #[cfg(feature = "result")]
 mod result;
 
-#[cfg(all(test, feature = "result"))]
+#[cfg(test)]
 mod tests;
+
+///
+#[cfg(feature = "option")]
+#[proc_macro]
+pub fn option(input: TokenStream) -> TokenStream {
+    parse_macro_input!(input as option::OptionMacro).into_token_stream().into()
+}
 
 ///
 #[cfg(feature = "result")]
