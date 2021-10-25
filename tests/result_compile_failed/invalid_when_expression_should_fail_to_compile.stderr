@@ -1,0 +1,10 @@
+error[E0599]: no method named `is_ok` found for type `usize` in the current scope
+ --> tests/result_compile_failed/invalid_when_expression_should_fail_to_compile.rs:4:5
+  |
+4 | /     result! {
+5 | |         @when foo();
+6 | |         @ok   "will not compile";
+7 | |     }
+  | |_____^ method not found in `usize`
+  |
+  = note: this error originates in the macro `result` (in Nightly builds, run with -Z macro-backtrace for more info)
