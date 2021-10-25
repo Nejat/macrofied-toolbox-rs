@@ -1,37 +1,35 @@
-use std::fs::File;
-use std::io;
-use std::io::{BufWriter, Write};
-
-#[cfg(all(debug_assertions, feature = "debug-result"))]
-use cli_toolbox::debug;
+use std::env;
 
 use macrofied_toolbox::result;
-use std::env::args;
-use std::process::exit;
 
-fn main() -> io::Result<()> {
-    let file_name = if args().count() == 1 { "foo.txt" } else { "foo/foo.txt" };
+fn main() -> Result<(), &'static str> {
+    let break_test = env::args().collect::<Vec<_>>().last().unwrap_or(&String::new()) == "break";
 
-    // attempts to create a file
-    result! {
-         WHEN   File::create(file_name);
-         // if the file is successfully created, write some content
-         OK     file; {
-             let mut out = BufWriter::new(file);
+    if break_test {
+        result! {
+            @when  foo(false)?;
+            @ok    (baz) => "will not be seen: {:?}", baz;
+            @debug "dbg msg: {}", -24;
+            @error "err msg: {}", -42;
+                   { println!("error expression, {}", err) }
+        }
+    } else {
+        result! {
+            @when  foo(true)?;
+            @ok    (baz) => "all ok: {:?} {}", baz + 1, 42;
+            @debug "dbg msg will not be seen: {}", -24;
+            @error "err msg will not be seen: {:?} - {}", err, -42;
+                   { println!("error expression not run") }
+        }
+    }
 
-             writeln!(out, "some content")?;
-             writeln!(out, "some more content")?;
+    return Ok(());
 
-            println!("done - created {}", file_name);
-         }
-         // if an exception occurs output debug message to stderr
-         DEBUG  "problem creating file: {:?}", file_name;
-         ERR    exit(-1)
-
-         // * debug messages are conditionally compiled
-         //   and do not output anything in release builds
-         // * exceptions are appended to the debug message
-     }
-
-    Ok(())
+    fn foo(succeed: bool) -> Result<usize, &'static str> {
+        if succeed {
+            Ok(42)
+        } else {
+            Err("foo failed")
+        }
+    }
 }

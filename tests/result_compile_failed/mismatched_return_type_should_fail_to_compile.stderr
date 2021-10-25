@@ -1,0 +1,12 @@
+error[E0308]: mismatched types
+ --> tests/result_compile_failed/mismatched_return_type_should_fail_to_compile.rs:4:5
+  |
+4 | /     result! {
+5 | |         @when foo()?;
+6 | |         @ok   "will not compile";
+7 | |     }
+  | |     ^- help: try using a conversion method: `.to_string()`
+  | |_____|
+  |       expected struct `String`, found `&str`
+  |
+  = note: this error originates in the macro `result` (in Nightly builds, run with -Z macro-backtrace for more info)

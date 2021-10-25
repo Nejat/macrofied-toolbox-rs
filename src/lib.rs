@@ -23,38 +23,6 @@
 //!
 //! ### `Result<T,E>`
 //! ```no_run
-//! use std::fs::File;
-//! use std::io;
-//! use std::io::{BufWriter, Write};
-//!
-//! use macrofied_toolbox::result;
-//!
-//! #[cfg(debug_assertions)]
-//! use cli_toolbox::debug;
-//!
-//! fn main() -> io::Result<()> {
-//!     let file_name = "foo.txt";
-//!
-//!     // attempts to create a file
-//!     result! {
-//!         WHEN  File::create(file_name);
-//!         // if the file is successfully created, write some content
-//!         OK    file; {
-//!             let mut out = BufWriter::new(file);
-//!
-//!             writeln!(out, "some content")?;
-//!             writeln!(out, "some more content")?;
-//!         }
-//!         // if an exception occurs output debug message to stderr
-//!         DEBUG "problem creating file: {:?}", file_name
-//!
-//!         // * debug messages are conditionally compiled
-//!         //   and do not output anything in release builds
-//!         // * exceptions are appended to the debug message
-//!     }
-//!
-//!     Ok(())
-//! }
 //! ```
 //!
 //! ### `Option<T>`
@@ -67,9 +35,37 @@
 //!
 //! \* _the macros are automatically generated with custom build scripts, including their_ `docs` and `tests`
 
+#[cfg(feature = "result")]
+#[macro_use]
+extern crate bitflags;
+#[cfg(feature = "result")]
+#[macro_use]
+extern crate cfg_if;
+#[cfg(feature = "result")]
+#[macro_use]
+extern crate quote;
+#[cfg(feature = "result")]
+#[macro_use]
+extern crate syn;
+
+#[cfg(feature = "result")]
+use proc_macro::TokenStream;
+
+#[cfg(feature = "result")]
+use quote::ToTokens;
+
+#[cfg(feature = "result")]
+mod common;
 
 #[cfg(feature = "result")]
 mod result;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "result"))]
 mod tests;
+
+///
+#[cfg(feature = "result")]
+#[proc_macro]
+pub fn result(input: TokenStream) -> TokenStream {
+    parse_macro_input!(input as result::ResultMacro).into_token_stream().into()
+}
