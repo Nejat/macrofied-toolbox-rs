@@ -247,6 +247,110 @@ pub fn option(input: TokenStream) -> TokenStream {
 }
 
 /// a macro for making debugging more ergonomic when handling `Result<T,E>` results
+///
+/// ## Anotomy of the `result!` macro
+///
+/// The `result!` macro consists of a mandatory `@when` section and one to three
+/// optional evaluation sections `@ok`, `@debug` and/or `@error`, at least one must be
+/// defined.
+///
+/// <br/>__\* _any_ `<expr>`_s which are code blocks, i.e._ `{ ... }` _, can not have an optional
+/// section terminator_ `;`__<br/>
+///
+/// ### `@when`
+///
+/// The `@when` section is defined as `[@when] <expr>[?][;]`
+///
+/// * `@when` - the identifier itself is optional
+/// * `<expr>` - an expression that must  evaluate to a `Result<T,E>` value
+/// * `[?]` - the try operator will return `Result::Err` after completing `@debug` and/or `@error`
+/// * `[;]` - optional section terminator
+///
+/// __`Example A:`__ `@when foo()?;`<br/>
+/// __`Example B:`__ `@when foo()?;`<br/>
+///
+/// ### `@ok`
+///
+/// The `@ok` section is defined as `@some [(identifier) =>]<message|expr>[;]`
+///
+/// \* _only evaluates if the result of the `@when` expression is_ `Result::Ok`
+///
+/// * `@ok` - mandatory section identifier
+/// * `[(identifier) =>]` - a custom defined identifier which is available in
+///                           the `message` or `expr`
+/// * `<message|expr>` - can access the custom defined identifier or the `ok` keyword
+///     * `message` - outputs to `stdout` with a `println!` statement, therefore has the same `args`
+///     * `expr` - any expression to evaluate
+/// * `[;]` - optional section terminator
+///
+/// __`Example:`__ `@ok "success: {}", ok;`<br/>
+/// __`Example:`__ `@ok (foo) => "success: {}", foo;`<br/>
+/// __`Example:`__ `@ok (foo) => { success(foo) }`<br/>
+///
+/// ### `@debug`
+///
+/// The `@debug` section is defined as `@debug <message>[;]`
+///
+/// \* _only evaluates if the result of the `@when` expression is_ `Result::Err`
+///
+/// * `@debug` - mandatory section identifier
+/// * `message` - outputs to `stdout` with a `println!` statement, therefore has the same `args`,
+///               can use optional `err` keyword to report `Result::Err(err)`
+/// * `[;]` - optional section terminator
+///
+/// __`Example:`__ `@debug "dbg: foo failed! - {}", err;`
+///
+/// ### `@none`
+///
+/// The `@error` section is defined as `@error [<message>[;]][<expr>][;]`, must
+/// provide at least a `message` and/or `expr`
+///
+/// \* _only evaluates if the result of the `@when` expression is_ `Result::Err`
+///
+/// * `@error` - mandatory section identifier
+/// * `[message][;]` - _optional_, outputs to `stderr` with a `println!` statement, therefore
+///                    has the same `args`, requires the `;` terminator if an `<expr>[;]` is
+///                    also defined, can use optional `err` keyword to report `Result::Err(err)`
+/// * `[<expr>]` - _optional_, any expression to evaluate, can use optional `err` keyword to
+///                report `Result::Err(err)`
+/// * `[;]` - optional section terminator
+///
+/// __`Example A:`__ `@err "err: foo failed! - {}", err`<br/>
+/// __`Example B:`__ `{ on_fail_baz(err); }`<br/>
+/// __`Example C:`__ `@err "err: foo failed! - {}", err; { on_fail_baz(err); }`<br/>
+///
+/// ## Example
+///
+/// ```no_run
+/// # use std::fs::File;
+/// # use std::io;
+/// # use std::io::{BufWriter, Write};
+/// # use std::process::exit;
+/// use macrofied_toolbox::result;
+///
+/// fn main() -> io::Result<()> {
+///     let file_name = "foo.txt";
+///
+///     result! {
+///         @when  File::create(file_name)?;
+///         @ok    (file) => {
+///                    let mut out = BufWriter::new(file);
+///
+///                    writeln!(out, "some content")?;
+///                    writeln!(out, "some more content")?;
+///                }
+///         @debug "problem creating file: {:?} - {}", file_name, err;
+///         @error "{:?} failed - {}; attempting recovery ...", file_name, err;
+///                recovery_from_fail(file_name);
+///     }
+///
+///     Ok(())
+/// }
+///
+/// fn recovery_from_fail(_: &str) {
+///     // some very import recovery logic
+/// }
+/// ```
 #[cfg(feature = "result")]
 #[proc_macro]
 pub fn result(input: TokenStream) -> TokenStream {
