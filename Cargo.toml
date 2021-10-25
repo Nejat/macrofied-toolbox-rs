@@ -1,6 +1,6 @@
 [package]
 name = "macrofied-toolbox"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2018"
 description = "This library provides an ergonomic experience of adding debugging messages to rust's Result<T,E> and Option<T> patterns"
 license = "MIT"
@@ -20,13 +20,12 @@ proc-macro = true
 [dependencies]
 bitflags = "1.3"
 cfg-if = "1.0"
-#Inflector = { version = "0.11", default-features = false }
 proc-macro2 = "1.0"
 quote = "1"
 syn = { version = "1.0", features = ["full"] }
 
 [dev-dependencies]
-test-toolbox = { version = "0.2", features = ["all"] }
+test-toolbox = { version = "0.2", features = ["expected","capture"] }
 trybuild = { version = "1.0", features = ["diff"] }
 version-sync = "0.9"
 

@@ -92,8 +92,8 @@ fn example(file_name: &str) -> Option<()> {
 ```
 
 ## Resources
-* [Docs](https://docs.rs/macrofied-toolbox/0.1.0/macrofied_toolbox/) for more detailed information
-* [Examples](https://github.com/Nejat/macrofied-toolbox-rs/tree/v0.1.0/examples) to see it in action
+* [Docs](https://docs.rs/macrofied-toolbox/0.2.0/macrofied_toolbox/) for more detailed information
+* [Examples](https://github.com/Nejat/macrofied-toolbox-rs/tree/v0.2.0/examples) to see it in action
 
 ## Usage
 
@@ -101,7 +101,7 @@ Each macro is gated by a feature; `all`, `option` or `result` respectively.
 
 ```toml
 [dependencies]
-macrofied-toolbox = { version = "0.1", features = ["option", "result"] }
+macrofied-toolbox = { version = "0.2", features = ["option", "result"] }
 ```
 
 ### Features

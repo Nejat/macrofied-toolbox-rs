@@ -7,7 +7,7 @@
 #![allow(clippy::module_name_repetitions)]
 #![allow(clippy::items_after_statements)]
 // ==============================================================
-#![doc(html_root_url = "https://docs.rs/macrofied-toolbox/0.1.0")]
+#![doc(html_root_url = "https://docs.rs/macrofied-toolbox/0.2.0")]
 
 //! This library provides an ergonomic experience of adding debugging messages to rust's
 //! `Result<T,E>` and `Option<T>` patterns
