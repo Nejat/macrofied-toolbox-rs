@@ -22,7 +22,7 @@ impl ToTokens for OptionMacro {
                 branch_only_some(tokens, when, self.some.as_ref().unwrap()),
             #[cfg(not(all(debug_assertions, feature = "option-debug")))]
             Parts::DEBUG =>
-                branch_only_none(tokens, when, || TokenStream::new()),
+                branch_only_none(tokens, when, TokenStream::new),
             #[cfg(all(debug_assertions, feature = "option-debug"))]
             Parts::DEBUG =>
                 branch_only_none(

@@ -52,7 +52,7 @@ fn when_err_result_with_ok_should_output_dbg_and_err() {
 }
 
 #[test]
-fn when_err_result_with_ok_should_output_dbg_and_err_and_eval_err () {
+fn when_err_result_with_ok_should_output_dbg_and_err_and_eval_err() {
     expect! { expected_err = "err: foo failed!\n", "dbg: \"foo failed!\"\nerr: foo failed!\n" }
 
     let expected = "foo failed!";
@@ -149,7 +149,7 @@ fn when_err_result_without_ok_should_output_dbg_and_err() {
 }
 
 #[test]
-fn when_err_result_without_ok_should_output_dbg_and_err_and_eval_err () {
+fn when_err_result_without_ok_should_output_dbg_and_err_and_eval_err() {
     expect! { expected_err = "err: foo failed!\n", "dbg: \"foo failed!\"\nerr: foo failed!\n" }
 
     let expected = "foo failed!";

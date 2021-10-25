@@ -52,7 +52,7 @@ fn when_none_option_with_some_should_output_dbg_and_none() {
 }
 
 #[test]
-fn when_none_option_with_some_should_output_dbg_and_none_and_eval_err () {
+fn when_none_option_with_some_should_output_dbg_and_none_and_eval_err() {
     expect! { expected_err = "none: example message\n", "dbg: example message\nnone: example message\n" }
 
     let expected = false;
@@ -149,7 +149,7 @@ fn when_none_option_without_some_should_output_dbg_and_none() {
 }
 
 #[test]
-fn when_none_option_without_some_should_output_dbg_and_none_and_eval_err () {
+fn when_none_option_without_some_should_output_dbg_and_none_and_eval_err() {
     expect! { expected_err = "none: example message\n", "dbg: example message\nnone: example message\n" }
 
     let expected = false;

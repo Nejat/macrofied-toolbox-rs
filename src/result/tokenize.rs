@@ -41,7 +41,7 @@ impl ToTokens for ResultMacro {
                 ),
             Parts::OK_DEBUG_ERROR =>
                 branch_ok_or_error(
-                    tokens, when, self.ok.as_ref().unwrap(), || build_debugged_error(self)
+                    tokens, when, self.ok.as_ref().unwrap(), || build_debugged_error(self),
                 ),
             Parts::DEBUG_ERROR =>
                 branch_only_error(tokens, when, || build_debugged_error(self)),

@@ -83,7 +83,7 @@ fn when_none_option_with_some_should_output_dbg_and_none() {
 }
 
 #[test]
-fn when_none_option_with_some_should_output_dbg_and_none_and_eval_err () {
+fn when_none_option_with_some_should_output_dbg_and_none_and_eval_err() {
     let expected = None;
     let actual = test_try();
 
@@ -234,7 +234,7 @@ fn when_none_option_without_some_should_output_dbg_and_none() {
 }
 
 #[test]
-fn when_none_option_without_some_should_output_dbg_and_none_and_eval_err () {
+fn when_none_option_without_some_should_output_dbg_and_none_and_eval_err() {
     let expected = None;
     let actual = test_try();
 
