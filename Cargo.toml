@@ -9,7 +9,7 @@ homepage = "https://github.com/Nejat/macrofied-toolbox-rs"
 repository = "https://github.com/Nejat/macrofied-toolbox-rs"
 keywords = ["option", "result", "command", "path"]
 authors = ["Nejat<nejatoz@gmail.com>"]
-categories = ["rust-pattern"]
+categories = ["rust-patterns"]
 
 [package.metadata.docs.rs]
 features = ["all-debug"]
