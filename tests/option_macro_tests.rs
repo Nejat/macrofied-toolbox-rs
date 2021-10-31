@@ -1,4 +1,7 @@
-use test_toolbox::{capture, expect};
+use cfg_if::cfg_if;
+use test_toolbox::capture;
+#[cfg(feature = "option-debug")]
+use test_toolbox::expect;
 
 use macrofied_toolbox::option;
 
@@ -37,7 +40,14 @@ fn when_none_option_with_some_should_output_and_eval_none_only() {
 
 #[test]
 fn when_none_option_with_some_should_output_dbg_and_none() {
-    expect! { expected_stdout = "", "dbg: example message\n" }
+    cfg_if! {
+        if #[cfg(feature = "option-debug")] {
+            expect! { expected_stdout = "", "dbg: example message\n" }
+        } else {
+            let expected_stdout = "";
+        }
+    }
+
     let expected_stderr = "none: example message\n";
 
     let (actual_stdout, actual_stderr) = capture! {
@@ -55,9 +65,15 @@ fn when_none_option_with_some_should_output_dbg_and_none() {
 
 #[test]
 fn when_none_option_with_some_should_output_dbg_and_none_and_eval_err() {
-    expect! { expected_stdout = "", "dbg: example message\n" }
-    let expected_stderr = "none: example message\n";
+    cfg_if! {
+        if #[cfg(feature = "option-debug")] {
+            expect! { expected_stdout = "", "dbg: example message\n" }
+        } else {
+            let expected_stdout = "";
+        }
+    }
 
+    let expected_stderr = "none: example message\n";
     let expected = false;
     let mut actual = true;
 
@@ -78,7 +94,13 @@ fn when_none_option_with_some_should_output_dbg_and_none_and_eval_err() {
 
 #[test]
 fn when_none_option_with_some_should_output_dbg_only() {
-    expect! { expected_stdout = "", "dbg: example message\n" }
+    cfg_if! {
+        if #[cfg(feature = "option-debug")] {
+            expect! { expected_stdout = "", "dbg: example message\n" }
+        } else {
+            let expected_stdout = "";
+        }
+    }
 
     let (actual_stdout, _actual_stderr) = capture! {
         option! {
@@ -139,7 +161,14 @@ fn when_none_option_without_some_should_output_and_eval_none_only() {
 
 #[test]
 fn when_none_option_without_some_should_output_dbg_and_none() {
-    expect! { expected_stdout = "", "dbg: example message\n" }
+    cfg_if! {
+        if #[cfg(feature = "option-debug")] {
+            expect! { expected_stdout = "", "dbg: example message\n" }
+        } else {
+            let expected_stdout = "";
+        }
+    }
+
     let expected_stderr = "none: example message\n";
 
     let (actual_stdout, actual_stderr) = capture! {
@@ -156,9 +185,15 @@ fn when_none_option_without_some_should_output_dbg_and_none() {
 
 #[test]
 fn when_none_option_without_some_should_output_dbg_and_none_and_eval_err() {
-    expect! { expected_stdout = "", "dbg: example message\n" }
-    let expected_stderr = "none: example message\n";
+    cfg_if! {
+        if #[cfg(feature = "option-debug")] {
+            expect! { expected_stdout = "", "dbg: example message\n" }
+        } else {
+            let expected_stdout = "";
+        }
+    }
 
+    let expected_stderr = "none: example message\n";
     let expected = false;
     let mut actual = true;
 
@@ -178,7 +213,13 @@ fn when_none_option_without_some_should_output_dbg_and_none_and_eval_err() {
 
 #[test]
 fn when_none_option_without_some_should_output_dbg_only() {
-    expect! { expected_stdout = "", "dbg: example message\n" }
+    cfg_if! {
+        if #[cfg(feature = "option-debug")] {
+            expect! { expected_stdout = "", "dbg: example message\n" }
+        } else {
+            let expected_stdout = "";
+        }
+    }
 
     let (actual_stdout, _actual_stderr) = capture! {
         option! {
