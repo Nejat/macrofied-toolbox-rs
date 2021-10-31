@@ -1,6 +1,9 @@
 #![allow(unused_assignments)]
 
-use test_toolbox::{capture, expect};
+use cfg_if::cfg_if;
+use test_toolbox::capture;
+#[cfg(feature = "result-debug")]
+use test_toolbox::expect;
 
 use macrofied_toolbox::result;
 
@@ -65,7 +68,14 @@ fn when_err_result_with_ok_should_output_dbg_and_err() {
     assert_eq!(expected, actual);
 
     fn test_try() -> TestResult {
-        expect! { expected_stdout = "", "dbg: \"foo failed!\"\n" }
+        cfg_if! {
+            if #[cfg(feature = "result-debug")] {
+                expect! { expected_stdout = "", "dbg: \"foo failed!\"\n" }
+            } else {
+                let expected_stdout = "";
+            }
+        }
+
         let expected_stderr = "err: foo failed!\n";
 
         let (actual_stdout, actual_stderr) = capture! {
@@ -92,9 +102,15 @@ fn when_err_result_with_ok_should_output_dbg_and_err_and_eval_err() {
     assert_eq!(expected, actual);
 
     fn test_try() -> TestResult {
-        expect! { expected_stdout = "", "dbg: \"foo failed!\"\n" }
-        let expected_stderr = "err: foo failed!\n";
+        cfg_if! {
+            if #[cfg(feature = "result-debug")] {
+                expect! { expected_stdout = "", "dbg: \"foo failed!\"\n" }
+            } else {
+                let expected_stdout = "";
+            }
+        }
 
+        let expected_stderr = "err: foo failed!\n";
         let expected = "foo failed!";
         let mut actual = "";
 
@@ -124,7 +140,13 @@ fn when_err_result_with_ok_should_output_dbg_only() {
     assert_eq!(expected, actual);
 
     fn test_try() -> TestResult {
-        expect! { expected_stdout = "", "dbg: \"foo failed!\"\n" }
+        cfg_if! {
+            if #[cfg(feature = "result-debug")] {
+                expect! { expected_stdout = "", "dbg: \"foo failed!\"\n" }
+            } else {
+                let expected_stdout = "";
+            }
+        }
 
         let (actual_stdout, _actual_stderr) = capture! {
             result! {
@@ -221,7 +243,14 @@ fn when_err_result_without_ok_should_output_dbg_and_err() {
     assert_eq!(expected, actual);
 
     fn test_try() -> TestResult {
-        expect! { expected_stdout = "", "dbg: \"foo failed!\"\n" }
+        cfg_if! {
+            if #[cfg(feature = "result-debug")] {
+                expect! { expected_stdout = "", "dbg: \"foo failed!\"\n" }
+            } else {
+                let expected_stdout = "";
+            }
+        }
+
         let expected_stderr = "err: foo failed!\n";
 
         let (actual_stdout, actual_stderr) = capture! {
@@ -247,9 +276,15 @@ fn when_err_result_without_ok_should_output_dbg_and_err_and_eval_err() {
     assert_eq!(expected, actual);
 
     fn test_try() -> TestResult {
-        expect! { expected_stdout = "", "dbg: \"foo failed!\"\n" }
-        let expected_stderr = "err: foo failed!\n";
+        cfg_if! {
+            if #[cfg(feature = "result-debug")] {
+                expect! { expected_stdout = "", "dbg: \"foo failed!\"\n" }
+            } else {
+                let expected_stdout = "";
+            }
+        }
 
+        let expected_stderr = "err: foo failed!\n";
         let expected = "foo failed!";
         let mut actual = "";
 
@@ -278,7 +313,13 @@ fn when_err_result_without_ok_should_output_dbg_only() {
     assert_eq!(expected, actual);
 
     fn test_try() -> TestResult {
-        expect! { expected_stdout = "", "dbg: \"foo failed!\"\n" }
+        cfg_if! {
+            if #[cfg(feature = "result-debug")] {
+                expect! { expected_stdout = "", "dbg: \"foo failed!\"\n" }
+            } else {
+                let expected_stdout = "";
+            }
+        }
 
         let (actual_stdout, _actual_stderr) = capture! {
             result! {

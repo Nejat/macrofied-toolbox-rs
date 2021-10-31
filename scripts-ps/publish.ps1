@@ -33,29 +33,65 @@ if ($ForReals -and $SkipClean) {
     $SkipClean = $false
 }
 
-if (!$SkipClean)
-{
+if (!$SkipClean) {
     cargo clean
     Confirm-Success "clean"
 }
 
-cargo clippy --all-features
-Confirm-Success "clippy"
+Write-Host "running clippy option unoptimized" -ForegroundColor Yellow
+cargo clippy --features="option"
+Confirm-Success "clippy option unoptimized"
 
-cargo clippy --release --all-features
-Confirm-Success "clippy release"
+Write-Host "running clippy option optimized" -ForegroundColor Yellow
+cargo clippy --release --features="option"
+Confirm-Success "clippy option optimized"
 
-cargo test --all-features -- --nocapture --test-threads=1
-Confirm-Success "test"
+Write-Host "running clippy option-debug unoptimized" -ForegroundColor Yellow
+cargo clippy --features="option-debug"
+Confirm-Success "clippy option-debug unoptimized"
 
-cargo test --release --all-features -- --nocapture --test-threads=1
-Confirm-Success "test release"
+Write-Host "running clippy option-debug optimized" -ForegroundColor Yellow
+cargo clippy --release --features="option-debug"
+Confirm-Success "clippy option-debug optimized"
 
-cargo publish --locked --all-features --dry-run
-Confirm-Success "publish dry run"
+Write-Host "running clippy result unoptimized" -ForegroundColor Yellow
+cargo clippy --features="result"
+Confirm-Success "clippy result unoptimized"
 
-if ($ForReals)
-{
+Write-Host "running clippy result optimized" -ForegroundColor Yellow
+cargo clippy --release --features="result"
+Confirm-Success "clippy result optimized"
+
+Write-Host "running clippy result-debug unoptimized" -ForegroundColor Yellow
+cargo clippy --features="result-debug"
+Confirm-Success "clippy result-debug unoptimized"
+
+Write-Host "running clippy result-debug optimized" -ForegroundColor Yellow
+cargo clippy --release --features="result-debug"
+Confirm-Success "clippy result-debug optimized"
+
+Write-Host "running test all unoptimized" -ForegroundColor Yellow
+cargo test --features="all" -- --nocapture --test-threads=1
+Confirm-Success "test all optimized"
+
+Write-Host "running test all optimized" -ForegroundColor Yellow
+cargo test --features="all" --release -- --nocapture --test-threads=1
+Confirm-Success "test all optimized"
+
+Write-Host "running test all-debug unoptimized" -ForegroundColor Yellow
+cargo test --features="all-debug" -- --nocapture --test-threads=1
+Confirm-Success "test all-debug optimized"
+
+Write-Host "running test all-debug optimized" -ForegroundColor Yellow
+cargo test --features="all-debug" --release -- --nocapture --test-threads=1
+Confirm-Success "test all-debug optimized"
+
+if ($ForReals) {
+    Write-Host "running publish" -ForegroundColor Yellow
     cargo publish --locked --all-features
     Confirm-Success "publish"
+} else {
+    Write-Host "running publish dry run" -ForegroundColor Yellow
+    cargo publish --locked --all-features --dry-run
+    Confirm-Success "publish dry run"
 }
