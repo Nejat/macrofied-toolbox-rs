@@ -22,8 +22,18 @@ function confirm-success() {
 }
 
 clear
-cargo test --all-features -- --nocapture --test-threads=1
-confirm-success "test"
+echo -e "${YELLOW}running test all unoptimized"
+cargo test --features="all" -- --nocapture --test-threads=1
+confirm-success "test all optimized"
 
-cargo test --all-features --release -- --nocapture --test-threads=1
-confirm-success "test release"
+echo -e "${YELLOW}running test all optimized"
+cargo test --features="all" --release -- --nocapture --test-threads=1
+confirm-success "test all optimized"
+
+echo -e "${YELLOW}running test all-debug unoptimized"
+cargo test --features="all-debug" -- --nocapture --test-threads=1
+confirm-success "test all-debug optimized"
+
+echo -e "${YELLOW}running test all-debug optimized"
+cargo test --features="all-debug" --release -- --nocapture --test-threads=1
+confirm-success "test all-debug optimized"

@@ -20,9 +20,34 @@ if (Test-Path -Path $script -PathType Leaf) {
 }
 
 clear
-cargo clippy --all-features
-Confirm-Success "clippy"
+Write-Host "running clippy option unoptimized" -ForegroundColor Yellow
+cargo clippy --features="option"
+Confirm-Success "clippy option unoptimized"
 
-cargo clippy --release --all-features
-Confirm-Success "clippy release"
+Write-Host "running clippy option optimized" -ForegroundColor Yellow
+cargo clippy --release --features="option"
+Confirm-Success "clippy option optimized"
 
+Write-Host "running clippy option-debug unoptimized" -ForegroundColor Yellow
+cargo clippy --features="option-debug"
+Confirm-Success "clippy option-debug unoptimized"
+
+Write-Host "running clippy option-debug optimized" -ForegroundColor Yellow
+cargo clippy --release --features="option-debug"
+Confirm-Success "clippy option-debug optimized"
+
+Write-Host "running clippy result unoptimized" -ForegroundColor Yellow
+cargo clippy --features="result"
+Confirm-Success "clippy result unoptimized"
+
+Write-Host "running clippy result optimized" -ForegroundColor Yellow
+cargo clippy --release --features="result"
+Confirm-Success "clippy result optimized"
+
+Write-Host "running clippy result-debug unoptimized" -ForegroundColor Yellow
+cargo clippy --features="result-debug"
+Confirm-Success "clippy result-debug unoptimized"
+
+Write-Host "running clippy result-debug optimized" -ForegroundColor Yellow
+cargo clippy --release --features="result-debug"
+Confirm-Success "clippy result-debug optimized"

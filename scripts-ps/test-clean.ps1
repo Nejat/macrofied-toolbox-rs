@@ -20,11 +20,22 @@ if (Test-Path -Path $script -PathType Leaf) {
 }
 
 clear
+Write-Host "running clean" -ForegroundColor Yellow
 cargo clean
 Confirm-Success "clean"
 
-cargo test --all-features -- --nocapture --test-threads=1
-Confirm-Success "test"
+Write-Host "running test all unoptimized" -ForegroundColor Yellow
+cargo test --features="all" -- --nocapture --test-threads=1
+Confirm-Success "test all optimized"
 
-cargo test --all-features --release -- --nocapture --test-threads=1
-Confirm-Success "test release"
+Write-Host "running test all optimized" -ForegroundColor Yellow
+cargo test --features="all" --release -- --nocapture --test-threads=1
+Confirm-Success "test all optimized"
+
+Write-Host "running test all-debug unoptimized" -ForegroundColor Yellow
+cargo test --features="all-debug" -- --nocapture --test-threads=1
+Confirm-Success "test all-debug optimized"
+
+Write-Host "running test all-debug optimized" -ForegroundColor Yellow
+cargo test --features="all-debug" --release -- --nocapture --test-threads=1
+Confirm-Success "test all-debug optimized"

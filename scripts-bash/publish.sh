@@ -43,27 +43,66 @@ fi
 
 if [[ "${skip_clean}" == "true" ]]
 then
+  echo -e "${YELLOW}running clean"
     cargo clean
     confirm-success "clean"
 fi
 
-cargo clippy --all-features
-confirm-success "clippy"
+echo -e "${YELLOW}running clippy option unoptimized"
+cargo clippy --features="option"
+confirm-success "clippy option unoptimized"
 
-cargo clippy --release --all-features
-confirm-success "clippy release"
+echo -e "${YELLOW}running clippy option optimized"
+cargo clippy --release --features="option"
+confirm-success "clippy option optimized"
 
-cargo test --all-features -- --nocapture --test-threads=1
-confirm-success "test"
+echo -e "${YELLOW}running clippy option-debug unoptimized"
+cargo clippy --features="option-debug"
+confirm-success "clippy option-debug unoptimized"
 
-cargo test --all-features --release -- --nocapture --test-threads=1
-confirm-success "test release"
+echo -e "${YELLOW}running clippy option-debug optimized"
+cargo clippy --release --features="option-debug"
+confirm-success "clippy option-debug optimized"
 
-cargo publish --locked --all-features --dry-run
-confirm-success "publish dry run"
+echo -e "${YELLOW}running clippy result unoptimized"
+cargo clippy --features="result"
+confirm-success "clippy result unoptimized"
+
+echo -e "${YELLOW}running clippy result optimized"
+cargo clippy --release --features="result"
+confirm-success "clippy result optimized"
+
+echo -e "${YELLOW}running clippy result-debug unoptimized"
+cargo clippy --features="result-debug"
+confirm-success "clippy result-debug unoptimized"
+
+echo -e "${YELLOW}running clippy result-debug optimized"
+cargo clippy --release --features="result-debug"
+confirm-success "clippy result-debug optimized"
+
+echo -e "${YELLOW}running test all unoptimized"
+cargo test --features="all" -- --nocapture --test-threads=1
+confirm-success "test all optimized"
+
+echo -e "${YELLOW}running test all optimized"
+cargo test --features="all" --release -- --nocapture --test-threads=1
+confirm-success "test all optimized"
+
+echo -e "${YELLOW}running test all-debug unoptimized"
+cargo test --features="all-debug" -- --nocapture --test-threads=1
+confirm-success "test all-debug optimized"
+
+echo -e "${YELLOW}running test all-debug optimized"
+cargo test --features="all-debug" --release -- --nocapture --test-threads=1
+confirm-success "test all-debug optimized"
 
 if [[ "${for_reals}" == "true" ]]
 then
+  echo -e "${YELLOW}running publish"
   cargo publish --locked --all-features
   confirm-success "publish"
+else
+  echo -e "${YELLOW}running publish dry run"
+  cargo publish --locked --all-features --dry-run
+  confirm-success "publish dry run"
 fi
