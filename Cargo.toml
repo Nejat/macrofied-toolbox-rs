@@ -1,6 +1,6 @@
 [package]
 name = "macrofied-toolbox"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 description = "This library provides an ergonomic experience of adding debugging messages to rust's Result<T,E> and Option<T> patterns"
 license = "MIT"
@@ -9,7 +9,7 @@ homepage = "https://github.com/Nejat/macrofied-toolbox-rs"
 repository = "https://github.com/Nejat/macrofied-toolbox-rs"
 keywords = ["option", "result", "command", "path"]
 authors = ["Nejat<nejatoz@gmail.com>"]
-categories = ["rust-pattern"]
+categories = ["rust-patterns"]
 
 [package.metadata.docs.rs]
 features = ["all-debug"]
