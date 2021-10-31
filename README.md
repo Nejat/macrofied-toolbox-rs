@@ -92,22 +92,32 @@ fn example(file_name: &str) -> Option<()> {
 ```
 
 ## Resources
-* [Docs](https://docs.rs/macrofied-toolbox/0.2.0/macrofied_toolbox/) for more detailed information
-* [Examples](https://github.com/Nejat/macrofied-toolbox-rs/tree/v0.2.0/examples) to see it in action
+* [Docs](https://docs.rs/macrofied-toolbox/0.3.0/macrofied_toolbox/) for more detailed information
+* [Examples](https://github.com/Nejat/macrofied-toolbox-rs/tree/v0.3.0/examples) to see it in action
 
 ## Usage
 
 Each macro is gated by a feature; `all`, `option` or `result` respectively.
 
+* `option!` macro
+ 
 ```toml
 [dependencies]
-macrofied-toolbox = { version = "0.2", features = ["option", "result"] }
+macrofied-toolbox = { version = "0.3", features = ["option"] }
+```
+
+* `result!` macro
+
+```toml
+[dependencies]
+macrofied-toolbox = { version = "0.3", features = ["result"] }
 ```
 
 ### Features
 
 Although `macrofied-toolbox` was designed to make adding debugging output more ergonomic,
-the generation of debug output is gated by an optional `X-debug` feature. 
+the generation of debug output is gated by an optional `X-debug` feature for maximum
+flexibility. 
 
 \* _Debug output is only effective in unoptimized builds_ \*
 
