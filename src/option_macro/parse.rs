@@ -1,6 +1,6 @@
 use syn::parse::{Parse, ParseStream};
 
-use crate::common::{OnExpr, OnFail};
+use crate::common::{OnExpr, OnFail, trace_parsed};
 use crate::common::parse::{
     parse_expression, parse_expression_debug, parse_expression_success,
     parse_expression_when, parse_message, parse_optional_semicolon,
@@ -18,19 +18,19 @@ const SOME_SECTION: &str = "some";
 
 impl Parse for OptionMacro {
     fn parse(input: ParseStream) -> syn::Result<Self> {
-        let option_macro = Self {
-            when: parse_expression_when(input)?,
-            some: parse_expression_success(
-                input, kw::some, SOME_SECTION, Some(SOME_IDENT.to_string()),
-            )?,
-            debug: parse_expression_debug(input, &None)?,
-            none: parse_expression_none(input)?,
-        };
+        return trace_parsed(parse(input));
 
-        #[cfg(feature = "trace")]
-        println!("OPTION: {}", option_macro);
-
-        Ok(option_macro)
+        #[inline]
+        fn parse(input: ParseStream) -> syn::Result<OptionMacro> {
+            Ok(OptionMacro {
+                when: parse_expression_when(input)?,
+                some: parse_expression_success(
+                    input, kw::some, SOME_SECTION, Some(SOME_IDENT.to_string()),
+                )?,
+                debug: parse_expression_debug(input, &None)?,
+                none: parse_expression_none(input)?,
+            })
+        }
     }
 }
 

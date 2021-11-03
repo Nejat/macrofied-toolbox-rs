@@ -23,7 +23,7 @@ impl Display for OptionMacro {
         let none = format_option(&self.none);
 
         return write!(
-            fmt, "{{\n  when: {},\n  some: {},\n  debug: {},\n  none: {}\n}}",
+            fmt, "option! {{\n  when: {},\n  some: {},\n  debug: {},\n  none: {}\n}}",
             self.when, some, debug, none
         );
 

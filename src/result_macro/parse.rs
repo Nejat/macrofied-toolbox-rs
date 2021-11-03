@@ -1,7 +1,7 @@
 use quote::ToTokens;
 use syn::parse::{Parse, ParseStream};
 
-use crate::common::{OnExpr, OnFail};
+use crate::common::{OnExpr, OnFail, trace_parsed};
 use crate::common::parse::{
     parse_expression, parse_expression_debug, parse_expression_success,
     parse_expression_when, parse_message, parse_optional_semicolon, utils,
@@ -20,17 +20,17 @@ const OK_SECTION: &str = "ok";
 
 impl Parse for ResultMacro {
     fn parse(input: ParseStream) -> syn::Result<Self> {
-        let result_macro = Self {
-            when: parse_expression_when(input)?,
-            ok: parse_expression_success(input, kw::ok, OK_SECTION, Some(OK_IDENT.to_string()))?,
-            debug: parse_expression_debug(input, &Some(ERR_IDENT.to_string()))?,
-            error: parse_expression_error(input)?,
-        };
+        return trace_parsed(parse(input));
 
-        #[cfg(feature = "trace")]
-        println!("RESULT: {}", result_macro);
-
-        Ok(result_macro)
+        #[inline]
+        fn parse(input: ParseStream) -> syn::Result<ResultMacro> {
+            Ok(ResultMacro {
+                when: parse_expression_when(input)?,
+                ok: parse_expression_success(input, kw::ok, OK_SECTION, Some(OK_IDENT.to_string()))?,
+                debug: parse_expression_debug(input, &Some(ERR_IDENT.to_string()))?,
+                error: parse_expression_error(input)?,
+            })
+        }
     }
 }
 

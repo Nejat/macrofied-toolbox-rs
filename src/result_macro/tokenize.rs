@@ -1,62 +1,58 @@
 use proc_macro2::{Ident, Span, TokenStream};
 use quote::ToTokens;
 
-use crate::common::{Message, OnFail, OnSuccess, WhenExpr};
+use crate::common::{Message, OnFail, OnSuccess, trace_expansion, WhenExpr};
 use crate::result_macro::parse::OK_IDENT;
 use crate::result_macro::parts::Parts;
 use crate::result_macro::ResultMacro;
 
 impl ToTokens for ResultMacro {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        let when = &self.when;
+        tokens.extend(trace_expansion({
+            let when = &self.when;
 
-        match self.definition() {
-            #[cfg(not(all(debug_assertions, feature = "result-debug")))]
-            Parts::OK |
-            Parts::OK_DEBUG =>
-                branch_only_ok(tokens, when, self.ok.as_ref().unwrap()),
-            #[cfg(all(debug_assertions, feature = "result-debug"))]
-            Parts::OK =>
-                branch_only_ok(tokens, when, self.ok.as_ref().unwrap()),
-            #[cfg(not(all(debug_assertions, feature = "result-debug")))]
-            Parts::DEBUG =>
-                branch_only_error(tokens, when, || (None, TokenStream::new())),
-            #[cfg(all(debug_assertions, feature = "result-debug"))]
-            Parts::DEBUG =>
-                branch_only_error(
-                    tokens, when, || build_message_stdout(self.debug.as_ref().unwrap()),
-                ),
-            Parts::ERROR =>
-                branch_only_error(tokens, when, || build_on_error(self.error.as_ref().unwrap())),
-            #[cfg(all(debug_assertions, feature = "result-debug"))]
-            Parts::OK_DEBUG =>
-                branch_ok_or_error(
-                    tokens, when, self.ok.as_ref().unwrap(),
-                    || build_message_stdout(self.debug.as_ref().unwrap()),
-                ),
-            Parts::OK_ERROR =>
-                branch_ok_or_error(
-                    tokens, when, self.ok.as_ref().unwrap(),
-                    || build_on_error(self.error.as_ref().unwrap()),
-                ),
-            Parts::OK_DEBUG_ERROR =>
-                branch_ok_or_error(
-                    tokens, when, self.ok.as_ref().unwrap(), || build_debugged_error(self),
-                ),
-            Parts::DEBUG_ERROR =>
-                branch_only_error(tokens, when, || build_debugged_error(self)),
-            _ => unimplemented!("{:?} is not supported", self.definition())
-        }
-
-        #[cfg(feature = "trace")]
-        println!("EXPANSION: {}", tokens);
+            match self.definition() {
+                #[cfg(not(all(debug_assertions, feature = "result-debug")))]
+                Parts::OK |
+                Parts::OK_DEBUG =>
+                    branch_only_ok(when, self.ok.as_ref().unwrap()),
+                #[cfg(all(debug_assertions, feature = "result-debug"))]
+                Parts::OK =>
+                    branch_only_ok(when, self.ok.as_ref().unwrap()),
+                #[cfg(not(all(debug_assertions, feature = "result-debug")))]
+                Parts::DEBUG =>
+                    branch_only_error(when, || (None, TokenStream::new())),
+                #[cfg(all(debug_assertions, feature = "result-debug"))]
+                Parts::DEBUG =>
+                    branch_only_error(when, || build_message_stdout(self.debug.as_ref().unwrap())),
+                Parts::ERROR =>
+                    branch_only_error(when, || build_on_error(self.error.as_ref().unwrap())),
+                #[cfg(all(debug_assertions, feature = "result-debug"))]
+                Parts::OK_DEBUG =>
+                    branch_ok_or_error(
+                        when, self.ok.as_ref().unwrap(),
+                        || build_message_stdout(self.debug.as_ref().unwrap()),
+                    ),
+                Parts::OK_ERROR =>
+                    branch_ok_or_error(
+                        when, self.ok.as_ref().unwrap(),
+                        || build_on_error(self.error.as_ref().unwrap()),
+                    ),
+                Parts::OK_DEBUG_ERROR =>
+                    branch_ok_or_error(
+                        when, self.ok.as_ref().unwrap(), || build_debugged_error(self),
+                    ),
+                Parts::DEBUG_ERROR =>
+                    branch_only_error(when, || build_debugged_error(self)),
+                _ => unimplemented!("{:?} is not supported", self.definition())
+            }
+        }));
     }
 }
 
 fn branch_ok_or_error(
-    tokens: &mut TokenStream, when: &WhenExpr, ok: &OnSuccess,
-    build_error: impl Fn() -> (Option<String>, TokenStream),
-) {
+    when: &WhenExpr, ok: &OnSuccess, build_error: impl Fn() -> (Option<String>, TokenStream),
+) -> TokenStream {
     let when_expr = &when.expr;
     let (ok_branch, on_ok) = build_on_ok(ok);
     let (captured, on_error) = build_error();
@@ -67,32 +63,29 @@ fn branch_ok_or_error(
     };
     let tried = if when.tried { quote! { return Err(err); } } else { TokenStream::new() };
 
-    tokens.extend(
-        quote! {
-            match #when_expr {
-                #ok_branch => { #on_ok }
-                #error_branch => { #on_error; #tried }
-            }
+    quote! {
+        match #when_expr {
+            #ok_branch => { #on_ok }
+            #error_branch => { #on_error; #tried }
         }
-    );
+    }
 }
 
 fn branch_only_error(
-    tokens: &mut TokenStream, when: &WhenExpr,
-    build_error: impl Fn() -> (Option<String>, TokenStream),
-) {
+    when: &WhenExpr, build_error: impl Fn() -> (Option<String>, TokenStream),
+) -> TokenStream {
     let when_expr = &when.expr;
     let (captured, on_error) = build_error();
     let when_tried = if when.tried { quote! { return Err(err); } } else { TokenStream::new() };
 
     if captured.is_some() || when.tried {
-        tokens.extend(quote! { if let Err(err) = #when_expr { #on_error; #when_tried } });
+        quote! { if let Err(err) = #when_expr { #on_error; #when_tried } }
     } else {
-        tokens.extend(quote! { if #when_expr.is_err() { #on_error; } });
+        quote! { if #when_expr.is_err() { #on_error; } }
     }
 }
 
-fn branch_only_ok(tokens: &mut TokenStream, when: &WhenExpr, ok: &OnSuccess) {
+fn branch_only_ok(when: &WhenExpr, ok: &OnSuccess) -> TokenStream {
     let when_expr = &when.expr;
     let (captured, on_ok) = match ok {
         OnSuccess::Expr(expr) =>
@@ -108,23 +101,21 @@ fn branch_only_ok(tokens: &mut TokenStream, when: &WhenExpr, ok: &OnSuccess) {
     if when.tried {
         let ok_branch = build_ok_branch(captured);
 
-        tokens.extend(
-            quote! {
-                match #when_expr {
-                    #ok_branch => { #on_ok }
-                    Err(err) => { return Err(err); }
-                }
+        quote! {
+            match #when_expr {
+                #ok_branch => { #on_ok }
+                Err(err) => { return Err(err); }
             }
-        );
+        }
     } else {
         match captured {
             Some(captured) => {
                 let captured = Ident::new(captured, Span::call_site());
 
-                tokens.extend(quote! { if let Ok(#captured) = #when_expr { #on_ok } });
+                quote! { if let Ok(#captured) = #when_expr { #on_ok } }
             }
             None =>
-                tokens.extend(quote! { if #when_expr.is_ok() { #on_ok } }),
+                quote! { if #when_expr.is_ok() { #on_ok } },
         }
     }
 }

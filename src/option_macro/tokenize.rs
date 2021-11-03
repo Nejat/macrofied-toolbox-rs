@@ -1,7 +1,7 @@
 use proc_macro2::{Ident, Span, TokenStream};
 use quote::ToTokens;
 
-use crate::common::{OnFail, OnSuccess, WhenExpr};
+use crate::common::{OnFail, OnSuccess, trace_expansion, WhenExpr};
 #[cfg(all(debug_assertions, feature = "option-debug"))]
 use crate::common::Message;
 use crate::option_macro::OptionMacro;
@@ -10,84 +10,76 @@ use crate::option_macro::parts::Parts;
 
 impl ToTokens for OptionMacro {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        let when = &self.when;
+        tokens.extend(trace_expansion({
+            let when = &self.when;
 
-        match self.definition() {
-            #[cfg(not(all(debug_assertions, feature = "option-debug")))]
-            Parts::SOME |
-            Parts::SOME_DEBUG =>
-                branch_only_some(tokens, when, self.some.as_ref().unwrap()),
-            #[cfg(all(debug_assertions, feature = "option-debug"))]
-            Parts::SOME =>
-                branch_only_some(tokens, when, self.some.as_ref().unwrap()),
-            #[cfg(not(all(debug_assertions, feature = "option-debug")))]
-            Parts::DEBUG =>
-                branch_only_none(tokens, when, TokenStream::new),
-            #[cfg(all(debug_assertions, feature = "option-debug"))]
-            Parts::DEBUG =>
-                branch_only_none(
-                    tokens, when, || build_message_stdout(self.debug.as_ref().unwrap()),
-                ),
-            Parts::NONE =>
-                branch_only_none(tokens, when, || build_on_none(self.none.as_ref().unwrap())),
-            #[cfg(all(debug_assertions, feature = "option-debug"))]
-            Parts::SOME_DEBUG =>
-                branch_some_or_none(
-                    tokens, when, self.some.as_ref().unwrap(),
-                    || build_message_stdout(self.debug.as_ref().unwrap()),
-                ),
-            Parts::SOME_NONE =>
-                branch_some_or_none(
-                    tokens, when, self.some.as_ref().unwrap(),
-                    || build_on_none(self.none.as_ref().unwrap()),
-                ),
-            Parts::SOME_DEBUG_NONE =>
-                branch_some_or_none(
-                    tokens, when, self.some.as_ref().unwrap(), || build_debugged_none(self),
-                ),
-            Parts::DEBUG_NONE =>
-                branch_only_none(tokens, when, || build_debugged_none(self)),
-            _ => unimplemented!("{:?} is not supported", self.definition())
-        }
-
-        #[cfg(feature = "trace")]
-        println!("EXPANSION: {}", tokens);
+            match self.definition() {
+                #[cfg(not(all(debug_assertions, feature = "option-debug")))]
+                Parts::SOME |
+                Parts::SOME_DEBUG =>
+                    branch_only_some(when, self.some.as_ref().unwrap()),
+                #[cfg(all(debug_assertions, feature = "option-debug"))]
+                Parts::SOME =>
+                    branch_only_some(when, self.some.as_ref().unwrap()),
+                #[cfg(not(all(debug_assertions, feature = "option-debug")))]
+                Parts::DEBUG =>
+                    branch_only_none(when, TokenStream::new),
+                #[cfg(all(debug_assertions, feature = "option-debug"))]
+                Parts::DEBUG =>
+                    branch_only_none(when, || build_message_stdout(self.debug.as_ref().unwrap())),
+                Parts::NONE =>
+                    branch_only_none(when, || build_on_none(self.none.as_ref().unwrap())),
+                #[cfg(all(debug_assertions, feature = "option-debug"))]
+                Parts::SOME_DEBUG =>
+                    branch_some_or_none(
+                        when, self.some.as_ref().unwrap(),
+                        || build_message_stdout(self.debug.as_ref().unwrap()),
+                    ),
+                Parts::SOME_NONE =>
+                    branch_some_or_none(
+                        when, self.some.as_ref().unwrap(),
+                        || build_on_none(self.none.as_ref().unwrap()),
+                    ),
+                Parts::SOME_DEBUG_NONE =>
+                    branch_some_or_none(
+                        when, self.some.as_ref().unwrap(), || build_debugged_none(self),
+                    ),
+                Parts::DEBUG_NONE =>
+                    branch_only_none(when, || build_debugged_none(self)),
+                _ => unimplemented!("{:?} is not supported", self.definition())
+            }
+        }));
     }
 }
 
 fn branch_some_or_none(
-    tokens: &mut TokenStream, when: &WhenExpr,
-    some: &OnSuccess, build_none: impl Fn() -> TokenStream,
-) {
+    when: &WhenExpr, some: &OnSuccess, build_none: impl Fn() -> TokenStream
+) -> TokenStream {
     let when_expr = &when.expr;
     let (some_branch, on_some) = build_on_some(some);
     let on_none = build_none();
     let tried = if when.tried { quote! { return None; } } else { TokenStream::new() };
 
-    tokens.extend(
-        quote! {
-            match #when_expr {
-                #some_branch => { #on_some }
-                None => { #on_none; #tried }
-            }
+    quote! {
+        match #when_expr {
+            #some_branch => { #on_some }
+            None => { #on_none; #tried }
         }
-    );
+    }
 }
 
-fn branch_only_none(
-    tokens: &mut TokenStream, when: &WhenExpr, build_none: impl Fn() -> TokenStream,
-) {
+fn branch_only_none(when: &WhenExpr, build_none: impl Fn() -> TokenStream) -> TokenStream {
     let when_expr = &when.expr;
     let on_none = build_none();
 
     if when.tried {
-        tokens.extend(quote! { if let None = #when_expr { #on_none; return None; } });
+        quote! { if let None = #when_expr { #on_none; return None; } }
     } else {
-        tokens.extend(quote! { if #when_expr.is_none() { #on_none; } });
+        quote! { if #when_expr.is_none() { #on_none; } }
     }
 }
 
-fn branch_only_some(tokens: &mut TokenStream, when: &WhenExpr, some: &OnSuccess) {
+fn branch_only_some(when: &WhenExpr, some: &OnSuccess) -> TokenStream {
     let when_expr = &when.expr;
     let (captured, on_some) = match some {
         OnSuccess::Expr(expr) =>
@@ -103,23 +95,21 @@ fn branch_only_some(tokens: &mut TokenStream, when: &WhenExpr, some: &OnSuccess)
     if when.tried {
         let some_branch = build_some_branch(captured);
 
-        tokens.extend(
-            quote! {
-                match #when_expr {
-                    #some_branch => { #on_some }
-                    None => { return None; }
-                }
+        quote! {
+            match #when_expr {
+                #some_branch => { #on_some }
+                None => { return None; }
             }
-        );
+        }
     } else {
         match captured {
             Some(captured) => {
                 let captured = Ident::new(captured, Span::call_site());
 
-                tokens.extend(quote! { if let Some(#captured) = #when_expr { #on_some } });
+                quote! { if let Some(#captured) = #when_expr { #on_some } }
             }
             None =>
-                tokens.extend(quote! { if #when_expr.is_some() { #on_some } }),
+                quote! { if #when_expr.is_some() { #on_some } }
         }
     }
 }
@@ -139,9 +129,8 @@ fn build_debugged_none(result_macro: &OptionMacro) -> TokenStream {
 #[cfg(all(debug_assertions, feature = "option-debug"))]
 fn build_message_stdout(message: &Message) -> TokenStream {
     let message_fmt = message.build_message();
-    let none_message = quote! { println!(#message_fmt); };
 
-    none_message
+    quote! { println!(#message_fmt); }
 }
 
 fn build_some_branch(captured: &Option<String>) -> TokenStream {

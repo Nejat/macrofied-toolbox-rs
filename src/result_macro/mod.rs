@@ -23,7 +23,7 @@ impl Display for ResultMacro {
         let error = format_option(&self.error);
 
         return write!(
-            fmt, "{{\n  when: {},\n  ok: {},\n  debug: {},\n  error: {}\n}}",
+            fmt, "result! {{\n  when: {},\n  ok: {},\n  debug: {},\n  error: {}\n}}",
             self.when, ok, debug, error
         );
 
