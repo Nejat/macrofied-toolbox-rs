@@ -122,10 +122,10 @@ use quote::ToTokens;
 mod common;
 
 #[cfg(feature = "option")]
-mod option;
+mod option_macro;
 
 #[cfg(feature = "result")]
-mod result;
+mod result_macro;
 
 #[cfg(test)]
 mod tests;
@@ -243,7 +243,7 @@ mod tests;
 #[cfg(feature = "option")]
 #[proc_macro]
 pub fn option(input: TokenStream) -> TokenStream {
-    parse_macro_input!(input as option::OptionMacro).into_token_stream().into()
+    parse_macro_input!(input as option_macro::OptionMacro).into_token_stream().into()
 }
 
 /// a macro for making debugging more ergonomic when handling `Result<T,E>` results
@@ -354,5 +354,5 @@ pub fn option(input: TokenStream) -> TokenStream {
 #[cfg(feature = "result")]
 #[proc_macro]
 pub fn result(input: TokenStream) -> TokenStream {
-    parse_macro_input!(input as result::ResultMacro).into_token_stream().into()
+    parse_macro_input!(input as result_macro::ResultMacro).into_token_stream().into()
 }

@@ -2,7 +2,7 @@
 use std::fmt::{self, Display, Formatter};
 
 use crate::common::{Message, OnFail, OnSuccess, WhenExpr};
-use crate::result::parts::Parts;
+use crate::result_macro::parts::Parts;
 
 mod parse;
 mod parts;

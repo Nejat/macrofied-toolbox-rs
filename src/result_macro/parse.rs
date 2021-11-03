@@ -6,7 +6,7 @@ use crate::common::parse::{
     parse_expression, parse_expression_debug, parse_expression_success,
     parse_expression_when, parse_message, parse_optional_semicolon, utils,
 };
-use crate::result::ResultMacro;
+use crate::result_macro::ResultMacro;
 
 mod kw {
     custom_keyword![error];

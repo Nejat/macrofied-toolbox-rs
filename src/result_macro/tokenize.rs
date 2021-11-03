@@ -2,9 +2,9 @@ use proc_macro2::{Ident, Span, TokenStream};
 use quote::ToTokens;
 
 use crate::common::{Message, OnFail, OnSuccess, WhenExpr};
-use crate::result::parse::OK_IDENT;
-use crate::result::parts::Parts;
-use crate::result::ResultMacro;
+use crate::result_macro::parse::OK_IDENT;
+use crate::result_macro::parts::Parts;
+use crate::result_macro::ResultMacro;
 
 impl ToTokens for ResultMacro {
     fn to_tokens(&self, tokens: &mut TokenStream) {

@@ -4,9 +4,9 @@ use quote::ToTokens;
 use crate::common::{OnFail, OnSuccess, WhenExpr};
 #[cfg(all(debug_assertions, feature = "option-debug"))]
 use crate::common::Message;
-use crate::option::OptionMacro;
-use crate::option::parse::SOME_IDENT;
-use crate::option::parts::Parts;
+use crate::option_macro::OptionMacro;
+use crate::option_macro::parse::SOME_IDENT;
+use crate::option_macro::parts::Parts;
 
 impl ToTokens for OptionMacro {
     fn to_tokens(&self, tokens: &mut TokenStream) {
