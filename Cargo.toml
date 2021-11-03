@@ -18,14 +18,14 @@ features = ["all-debug"]
 proc-macro = true
 
 [dependencies]
-bitflags = "1"
-cfg-if = "1"
-proc-macro2 = "1"
-quote = "1"
-syn = { version = "1", features = ["full"] }
+bitflags = { version = "1", optional = true }
+cfg-if = { version = "1", optional = true }
+proc-macro2 = { version = "1", optional = true }
+quote = { version = "1", optional = true }
+syn = { version = "1", features = ["full"], optional = true }
 
 [dev-dependencies]
-test-toolbox = { version = "0.4", features = ["expected","capture"] }
+test-toolbox = { version = "0.5", features = ["expected","capture"] }
 trybuild = { version = "1", features = ["diff"] }
 version-sync = "0.9"
 
@@ -35,11 +35,12 @@ path = "tests/tests.rs"
 
 [features]
 default = []
+depends = [ "bitflags", "cfg-if", "proc-macro2", "quote", "syn" ]
 all = ["option", "result"]
 all-debug = ["option-debug", "result-debug"]
-option = []
+option = ["depends"]
 option-debug = ["option"]
-result = []
+result = ["depends"]
 result-debug = ["result"]
 trace = [] # feature should only be used for tests or examples
 
