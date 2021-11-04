@@ -58,12 +58,12 @@ fn branch_some_or_none(
     let when_expr = &when.expr;
     let (some_branch, on_some) = build_on_some(some);
     let on_none = build_none();
-    let tried = if when.tried { quote! { return None; } } else { TokenStream::new() };
+    let tried = if when.tried { quote! { ; return None; } } else { TokenStream::new() };
 
     quote! {
         match #when_expr {
             #some_branch => { #on_some }
-            None => { #on_none; #tried }
+            None => { #on_none #tried }
         }
     }
 }
@@ -106,10 +106,10 @@ fn branch_only_some(when: &WhenExpr, some: &OnSuccess) -> TokenStream {
             Some(captured) => {
                 let captured = Ident::new(captured, Span::call_site());
 
-                quote! { if let Some(#captured) = #when_expr { #on_some } }
+                quote! { if let Some(#captured) = #when_expr { #on_some; } }
             }
             None =>
-                quote! { if #when_expr.is_some() { #on_some } }
+                quote! { if #when_expr.is_some() { #on_some; } }
         }
     }
 }
@@ -147,7 +147,7 @@ fn build_on_debug_and_on_none(debug: &Message, error: &OnFail) -> TokenStream {
     let on_none = build_on_none(error);
     let on_debug = build_message_stdout(debug);
 
-    quote! { #on_debug  #on_none; }
+    quote! { #on_debug  #on_none }
 }
 
 fn build_on_none(error: &OnFail) -> TokenStream {

@@ -1,4 +1,4 @@
-use proc_macro2::Ident;
+use proc_macro2::{Ident, Span};
 use quote::ToTokens;
 use syn::{Error, Expr, Lit};
 use syn::parse::{Parse, ParseStream, Peek};
@@ -112,27 +112,15 @@ pub fn parse_expression(input: ParseStream, section: &str) -> syn::Result<Expr> 
 
     match expr {
         Expr::Block(_) | Expr::TryBlock(_) | Expr::Unsafe(_) => {}
-        Expr::Assign(_) | Expr::AssignOp(_) |
-        Expr::Await(_) | Expr::Binary(_) |
-        Expr::Box(_) | Expr::Break(_) |
-        Expr::Call(_) | Expr::Cast(_) |
-        Expr::Closure(_) | Expr::Continue(_) |
-        Expr::Field(_) | Expr::Group(_) |
-        Expr::If(_) | Expr::Index(_) |
-        Expr::Macro(_) | Expr::Match(_) |
-        Expr::MethodCall(_) | Expr::Path(_) |
-        Expr::Reference(_) | Expr::Repeat(_) |
-        Expr::Return(_) | Expr::Try(_) |
-        Expr::Tuple(_) | Expr::Unary(_) =>
-            parse_optional_semicolon(input)?,
-        _ =>
+        Expr::Let(_) | Expr::Struct(_)  =>
             return Err(Error::new(
                 expr.span(),
                 format!(
                     "{:?} is not a supported {} expression, try placing it into a code block",
                     decode_expr_type(&expr), section
                 ),
-            ))
+            )),
+        _ => parse_optional_semicolon(input)?
     }
 
     Ok(expr)
@@ -161,8 +149,7 @@ pub fn parse_expression_when(input: ParseStream) -> syn::Result<WhenExpr> {
         <kw::when>::parse(input)?;
     }
 
-    let mut expr = <Expr>::parse(input)?;
-    let mut tried = false;
+    let expr = <Expr>::parse(input)?;
 
     match expr {
         Expr::Await(_) | Expr::Call(_) |
@@ -170,76 +157,87 @@ pub fn parse_expression_when(input: ParseStream) -> syn::Result<WhenExpr> {
         Expr::Group(_) | Expr::If(_) |
         Expr::Index(_) | Expr::Macro(_) |
         Expr::Match(_) | Expr::MethodCall(_) |
-        Expr::Path(_) | Expr::Reference(_) =>
-            parse_optional_semicolon(input)?,
-        Expr::Try(try_expr) => {
-            tried = true;
-            expr = try_expr.expr.as_ref().clone();
+        Expr::Path(_) | Expr::Reference(_) => {
             parse_optional_semicolon(input)?;
+
+            Ok(WhenExpr { expr, tried: false })
         }
-        Expr::Block(_) if utils::does_block_contain_try(&expr) =>
-            return Err(Error::new(expr.span(), "block can not contain a try expression")),
-        Expr::Block(_) => {}
-        _ => return Err(Error::new(
+        Expr::Try(try_expr) => {
+            let tried = true;
+            let expr = try_expr.expr.as_ref().clone();
+
+            parse_optional_semicolon(input)?;
+
+            Ok(WhenExpr { expr, tried })
+        }
+        Expr::Block(_) if utils::block_contains_try(&expr) =>
+            Err(Error::new(expr.span(), "block can not contain a try expression")),
+        Expr::Block(_) =>
+            Ok(WhenExpr { expr, tried: false }),
+        _ => Err(Error::new(
             expr.span(),
             format!("{:?} is not a supported when expression", decode_expr_type(&expr)),
         ))
-    };
-
-    Ok(WhenExpr { expr, tried })
+    }
 }
 
 pub fn parse_message(
     input: ParseStream, section: &str, ident: &Option<String>,
 ) -> syn::Result<Message> {
-    let literal = <Lit>::parse(input)?;
+    if let Some(literal) = input.cursor().literal() {
+        if literal.0.to_string().starts_with('\"') {
+            let literal = <Lit>::parse(input)?;
 
-    match literal {
-        Lit::Str(_) | Lit::ByteStr(_) => {}
-        _ => return Err(Error::new(literal.span(), format!("{} expects a string literal", section)))
-    }
-
-    let mut exprs = Vec::new();
-    let mut captured = None;
-
-    while input.peek(Token![,]) {
-        <Token![,]>::parse(input)?;
-
-        let expr = <Expr>::parse(input)?;
-
-        if let Some(checked) = &ident {
-            if search_for_ident(expr.to_token_stream(), checked) {
-                captured = Some(checked.to_string());
+            match literal {
+                Lit::Str(_) => {}
+                _ => return Err(Error::new(literal.span(), format!("{} expects a string literal", section)))
             }
-        }
 
-        match expr {
-            Expr::Array(_) | Expr::Await(_) |
-            Expr::Binary(_) | Expr::Block(_) |
-            Expr::Call(_) | Expr::Cast(_) |
-            Expr::Field(_) | Expr::Group(_) |
-            Expr::If(_) | Expr::Index(_) |
-            Expr::Lit(_) | Expr::Macro(_) |
-            Expr::Match(_) | Expr::MethodCall(_) |
-            Expr::Paren(_) | Expr::Path(_) |
-            Expr::Range(_) | Expr::Reference(_) |
-            Expr::Repeat(_) | Expr::Try(_) |
-            Expr::TryBlock(_) | Expr::Tuple(_) |
-            Expr::Unary(_) | Expr::Unsafe(_) => {}
-            _ => return Err(Error::new(
-                expr.span(),
-                format!("{:?} is not a supported {} expression", decode_expr_type(&expr), section)
-            ))
-        }
+            let mut exprs = Vec::new();
+            let mut captured = None;
 
-        exprs.push(expr);
+            while input.peek(Token![,]) {
+                <Token![,]>::parse(input)?;
+
+                let expr = <Expr>::parse(input)?;
+
+                if let Some(checked) = &ident {
+                    if search_for_ident(expr.to_token_stream(), checked) {
+                        captured = Some(checked.to_string());
+                    }
+                }
+
+                match expr {
+                    Expr::Array(_) | Expr::Await(_) |
+                    Expr::Binary(_) | Expr::Block(_) |
+                    Expr::Call(_) | Expr::Cast(_) |
+                    Expr::Field(_) | Expr::Group(_) |
+                    Expr::If(_) | Expr::Index(_) |
+                    Expr::Lit(_) | Expr::Macro(_) |
+                    Expr::Match(_) | Expr::MethodCall(_) |
+                    Expr::Paren(_) | Expr::Path(_) |
+                    Expr::Range(_) | Expr::Reference(_) |
+                    Expr::Repeat(_) | Expr::Try(_) |
+                    Expr::TryBlock(_) | Expr::Tuple(_) |
+                    Expr::Unary(_) | Expr::Unsafe(_) => {}
+                    _ => return Err(Error::new(
+                        expr.span(),
+                        format!("{:?} is not a supported {} expression", decode_expr_type(&expr), section)
+                    ))
+                }
+
+                exprs.push(expr);
+            }
+
+            return Ok(Message {
+                args: if exprs.is_empty() { None } else { Some(exprs) },
+                captured,
+                fmt: literal,
+            });
+        }
     }
 
-    Ok(Message {
-        args: if exprs.is_empty() { None } else { Some(exprs) },
-        captured,
-        fmt: literal,
-    })
+    Err(Error::new(Span::call_site(), "No Message"))
 }
 
 pub fn parse_optional_semicolon(input: ParseStream) -> syn::Result<()> {
@@ -257,7 +255,7 @@ pub mod utils {
     use proc_macro2::{TokenStream, TokenTree};
     use syn::{Expr, Stmt};
 
-    pub(super) fn does_block_contain_try(expr: &Expr) -> bool {
+    pub(super) fn block_contains_try(expr: &Expr) -> bool {
         if let Expr::Block(block_expr) = expr {
             if (&block_expr.block.stmts)
                 .iter()
