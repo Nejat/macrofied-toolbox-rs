@@ -143,11 +143,23 @@ pub fn parse_expression_debug(
     }
 }
 
-pub fn parse_expression_when(input: ParseStream) -> syn::Result<WhenExpr> {
+pub fn parse_expression_when<T: Peek>(input: ParseStream, success_kw: T) -> syn::Result<WhenExpr> {
     if input.peek(Token![@]) {
         <Token![@]>::parse(input)?;
-        <kw::when>::parse(input)?;
     }
+    let ok_when: bool = if input.peek(kw::when) {
+        <kw::when>::parse(input)?;
+
+        false
+    } else if input.peek(success_kw) {
+        <Ident>::parse(input)?;
+
+        true
+    } else {
+        return Err(Error::new(
+            Span::call_site(), "expected @when or @ok expression",
+        ));
+    };
 
     let expr = <Expr>::parse(input)?;
 
@@ -160,7 +172,7 @@ pub fn parse_expression_when(input: ParseStream) -> syn::Result<WhenExpr> {
         Expr::Path(_) | Expr::Reference(_) => {
             parse_optional_semicolon(input)?;
 
-            Ok(WhenExpr { expr, tried: false })
+            Ok(WhenExpr { expr, tried: false, ok_when })
         }
         Expr::Try(try_expr) => {
             let tried = true;
@@ -168,12 +180,12 @@ pub fn parse_expression_when(input: ParseStream) -> syn::Result<WhenExpr> {
 
             parse_optional_semicolon(input)?;
 
-            Ok(WhenExpr { expr, tried })
+            Ok(WhenExpr { expr, tried, ok_when })
         }
         Expr::Block(_) if utils::block_contains_try(&expr) =>
             Err(Error::new(expr.span(), "block can not contain a try expression")),
         Expr::Block(_) =>
-            Ok(WhenExpr { expr, tried: false }),
+            Ok(WhenExpr { expr, tried: false, ok_when }),
         _ => Err(Error::new(
             expr.span(),
             format!("{:?} is not a supported when expression", decode_expr_type(&expr)),

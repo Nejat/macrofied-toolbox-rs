@@ -1,6 +1,7 @@
+use proc_macro2::{Ident, Span};
 use syn::parse::{Parse, ParseStream};
 
-use crate::common::{OnExpr, OnFail, trace_parsed};
+use crate::common::{OnExpr, OnFail, OnSuccess, trace_parsed, trace_source};
 use crate::common::parse::{
     parse_expression, parse_expression_debug, parse_expression_success,
     parse_expression_when, parse_message, parse_optional_semicolon,
@@ -18,15 +19,26 @@ const SOME_SECTION: &str = "some";
 
 impl Parse for OptionMacro {
     fn parse(input: ParseStream) -> syn::Result<Self> {
-        return trace_parsed(parse(input));
+        return trace_parsed(parse(trace_source(input)));
 
         #[inline]
         fn parse(input: ParseStream) -> syn::Result<OptionMacro> {
+            let when = parse_expression_when(input, kw::some)?;
+
             Ok(OptionMacro {
-                when: parse_expression_when(input)?,
-                some: parse_expression_success(
-                    input, kw::some, SOME_SECTION, Some(SOME_IDENT.to_string()),
-                )?,
+                some: if when.ok_when {
+                    let some = Ident::new(SOME_IDENT, Span::call_site());
+
+                    Some(OnSuccess::Expr(OnExpr {
+                        captured: Some(SOME_IDENT.to_string()),
+                        expr: parse_quote! { #some },
+                    }))
+                } else {
+                    parse_expression_success(
+                        input, kw::some, SOME_SECTION, Some(SOME_IDENT.to_string()),
+                    )?
+                },
+                when,
                 debug: parse_expression_debug(input, &None)?,
                 none: parse_expression_none(input)?,
             })
