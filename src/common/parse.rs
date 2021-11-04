@@ -216,16 +216,20 @@ pub fn parse_message(
         match expr {
             Expr::Array(_) | Expr::Await(_) |
             Expr::Binary(_) | Expr::Block(_) |
-            Expr::Box(_) | Expr::Call(_) |
-            Expr::Cast(_) | Expr::Field(_) |
+            Expr::Call(_) | Expr::Cast(_) |
+            Expr::Field(_) | Expr::Group(_) |
             Expr::If(_) | Expr::Index(_) |
             Expr::Lit(_) | Expr::Macro(_) |
             Expr::Match(_) | Expr::MethodCall(_) |
-            Expr::Path(_) | Expr::Reference(_) |
-            Expr::Try(_) | Expr::TryBlock(_) |
-            Expr::Tuple(_) | Expr::Unary(_) |
-            Expr::Unsafe(_) => {}
-            _ => return Err(Error::new(expr.span(), format!("unsupported {} expression", section)))
+            Expr::Paren(_) | Expr::Path(_) |
+            Expr::Range(_) | Expr::Reference(_) |
+            Expr::Repeat(_) | Expr::Try(_) |
+            Expr::TryBlock(_) | Expr::Tuple(_) |
+            Expr::Unary(_) | Expr::Unsafe(_) => {}
+            _ => return Err(Error::new(
+                expr.span(),
+                format!("{:?} is not a supported {} expression", decode_expr_type(&expr), section)
+            ))
         }
 
         exprs.push(expr);
