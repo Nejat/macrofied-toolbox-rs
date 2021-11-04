@@ -1,5 +1,6 @@
 #[cfg(all(debug_assertions, feature = "trace"))]
 use std::fmt::Display;
+use syn::parse::ParseStream;
 
 pub use models::{Message, OnExpr, OnFail, OnSuccess, WhenExpr};
 
@@ -34,3 +35,14 @@ pub fn trace_parsed<T: Display, E: Display>(traced: Result<T, E>) -> Result<T, E
 #[cfg(not(all(debug_assertions, feature = "trace")))]
 #[inline]
 pub const fn trace_parsed<T>(traced: T) -> T { traced }
+
+#[cfg(all(debug_assertions, feature = "trace"))]
+#[inline]
+pub fn trace_source(input: ParseStream) -> ParseStream {
+    println!("SOURCE: {}", input);
+    input
+}
+
+#[cfg(not(all(debug_assertions, feature = "trace")))]
+#[inline]
+pub const fn trace_source(input: ParseStream) -> ParseStream { input }

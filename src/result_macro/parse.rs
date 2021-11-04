@@ -2,7 +2,7 @@ use proc_macro2::{Ident, Span};
 use quote::ToTokens;
 use syn::parse::{Parse, ParseStream};
 
-use crate::common::{OnExpr, OnFail, OnSuccess, trace_parsed};
+use crate::common::{OnExpr, OnFail, OnSuccess, trace_parsed, trace_source};
 use crate::common::parse::{
     parse_expression, parse_expression_debug, parse_expression_success,
     parse_expression_when, parse_message, parse_optional_semicolon, utils,
@@ -21,7 +21,7 @@ const OK_SECTION: &str = "ok";
 
 impl Parse for ResultMacro {
     fn parse(input: ParseStream) -> syn::Result<Self> {
-        return trace_parsed(parse(input));
+        return trace_parsed(parse(trace_source(input)));
 
         #[inline]
         fn parse(input: ParseStream) -> syn::Result<ResultMacro> {
