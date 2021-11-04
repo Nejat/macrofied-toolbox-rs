@@ -61,12 +61,12 @@ fn branch_ok_or_error(
     } else {
         quote! { Err(_) }
     };
-    let tried = if when.tried { quote! { return Err(err); } } else { TokenStream::new() };
+    let tried = if when.tried { quote! { ; return Err(err); } } else { TokenStream::new() };
 
     quote! {
         match #when_expr {
             #ok_branch => { #on_ok }
-            #error_branch => { #on_error; #tried }
+            #error_branch => { #on_error #tried }
         }
     }
 }
@@ -112,10 +112,10 @@ fn branch_only_ok(when: &WhenExpr, ok: &OnSuccess) -> TokenStream {
             Some(captured) => {
                 let captured = Ident::new(captured, Span::call_site());
 
-                quote! { if let Ok(#captured) = #when_expr { #on_ok } }
+                quote! { if let Ok(#captured) = #when_expr { #on_ok; } }
             }
             None =>
-                quote! { if #when_expr.is_ok() { #on_ok } },
+                quote! { if #when_expr.is_ok() { #on_ok; } },
         }
     }
 }
@@ -161,7 +161,7 @@ fn build_on_debug_and_on_error(debug: &Message, error: &OnFail) -> (Option<Strin
     let (captured_err, on_error) = build_on_error(error);
     let (captured_dbg, on_debug) = build_message_stdout(debug);
 
-    (captured_dbg.and(captured_err), quote! { #on_debug  #on_error; })
+    (captured_dbg.and(captured_err), quote! { #on_debug  #on_error })
 }
 
 fn build_on_error(error: &OnFail) -> (Option<String>, TokenStream) {
