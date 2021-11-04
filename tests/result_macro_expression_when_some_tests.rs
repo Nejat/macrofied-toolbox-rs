@@ -6,8 +6,7 @@ use macrofied_toolbox::result;
 fn when_result_ok_should_evaluate_ok_expression() {
     let expected = 42;
     let actual = result! {
-        @when foo_ok(21)
-        @ok   (baz) => baz * 2
+        @ok    foo_ok()
         @error unreachable!()
     };
 
@@ -21,10 +20,8 @@ fn when_result_err_should_evaluate_call_expression() {
 
     let (_stdout, _stderr) = capture! {{
         actual = result! {
-            @when  foo_err(21)
-            @ok    (baz) => baz * 2
-            @error "ERR: {}", err;
-                   error_value()
+            @ok    foo_err()
+            @error "ERR: {:?}", err; error_value()
         };
     }};
 
@@ -37,8 +34,7 @@ fn when_result_err_should_evaluate_call_expression() {
 fn when_result_err_no_message_should_evaluate_call_expression() {
     let expected = -42;
     let actual: isize = result! {
-        @when  foo_err(21)
-        @ok    (baz) => baz * 2
+        @ok    foo_err()
         @error error_value()
     };
 
@@ -54,10 +50,8 @@ fn when_result_err_should_evaluate_literal_expression() {
 
     let (_stdout, _stderr) = capture! {{
         actual = result! {
-            @when  foo_err(21)
-            @ok    (baz) => baz * 2
-            @error "ERR: {}", err;
-                   -42
+            @ok    foo_err()
+            @error "ERR: {:?}", err; -42
         }
     }};
 
@@ -68,18 +62,17 @@ fn when_result_err_should_evaluate_literal_expression() {
 fn when_result_err_no_message_should_evaluate_literal_expression() {
     let expected = -42;
     let actual: isize = result! {
-        @when  foo_err(21)
-        @ok    (baz) => baz * 2
+        @ok    foo_err()
         @error -42
     };
 
     assert_eq!(expected, actual);
 }
 
-fn foo_ok<T>(value: T) -> Result<T, &'static str> {
-    Ok(value)
+fn foo_ok() -> Result<isize, ()> {
+    Ok(42)
 }
 
-fn foo_err<T>(_value: T) -> Result<T, &'static str> {
-    Err("Foo Failed!")
+fn foo_err() -> Result<isize, ()> {
+    Err(())
 }

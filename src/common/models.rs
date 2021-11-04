@@ -117,13 +117,15 @@ impl Display for OnSuccess {
 pub struct WhenExpr {
     pub expr: Expr,
     pub tried: bool,
+    pub ok_when: bool
 }
 
 #[cfg(feature = "trace")]
 impl Display for WhenExpr {
     fn fmt(&self, fmt: &mut Formatter<'_>) -> fmt::Result {
         write!(
-            fmt, "{{ expr: \"{}\", tried: {} }}", self.expr.to_token_stream(), self.tried
+            fmt, "{{ expr: \"{}\", ok_when: {}, tried: {} }}",
+            self.expr.to_token_stream(), self.ok_when, self.tried
         )
     }
 }

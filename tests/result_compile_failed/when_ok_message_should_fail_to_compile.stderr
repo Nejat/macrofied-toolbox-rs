@@ -1,0 +1,5 @@
+error: "lit" is not a supported when expression
+ --> tests/result_compile_failed/when_ok_message_should_fail_to_compile.rs:5:17
+  |
+5 |         @ok     "This will fail: {}", 42
+  |                 ^^^^^^^^^^^^^^^^^^^^

@@ -6,8 +6,7 @@ use macrofied_toolbox::option;
 fn when_option_some_should_evaluate_ok_expression() {
     let expected = 42;
     let actual = option! {
-        @when foo_some(21)
-        @some (baz) => baz * 2
+        @some foo_some()
         @none unreachable!()
     };
 
@@ -21,10 +20,8 @@ fn when_option_none_should_evaluate_call_expression() {
 
     let (_stdout, _stderr) = capture! {{
         actual = option! {
-            @when foo_none(21)
-            @some (baz) => baz * 2
-            @none "It was None";
-                  error_value()
+            @some foo_none()
+            @none "It was None"; error_value()
         };
     }};
 
@@ -37,8 +34,7 @@ fn when_option_none_should_evaluate_call_expression() {
 fn when_option_none_no_message_should_evaluate_call_expression() {
     let expected = -42;
     let actual: isize = option! {
-        @when foo_none(21)
-        @some (baz) => baz * 2
+        @some foo_none()
         @none error_value()
     };
 
@@ -54,10 +50,8 @@ fn when_option_none_should_evaluate_literal_expression() {
 
     let (_stdout, _stderr) = capture! {{
         actual = option! {
-            @when foo_none(21)
-            @some (baz) => baz * 2
-            @none "It was None";
-                  -42
+            @some foo_none()
+            @none "It was None"; -42
         }
     }};
 
@@ -68,18 +62,17 @@ fn when_option_none_should_evaluate_literal_expression() {
 fn when_option_none_no_message_should_evaluate_literal_expression() {
     let expected = -42;
     let actual: isize = option! {
-        @when foo_none(21)
-        @some (baz) => baz * 2
+        @some foo_none()
         @none -42
     };
 
     assert_eq!(expected, actual);
 }
 
-fn foo_some<T>(value: T) -> Option<T> {
-    Some(value)
+fn foo_some() -> Option<isize> {
+    Some(42)
 }
 
-fn foo_none<T>(_value: T) -> Option<T> {
+fn foo_none() -> Option<isize> {
     None
 }
