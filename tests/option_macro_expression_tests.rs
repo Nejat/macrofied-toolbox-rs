@@ -1,4 +1,7 @@
+use cfg_if::cfg_if;
 use test_toolbox::capture;
+#[cfg(feature = "option-debug")]
+use test_toolbox::expect;
 
 use macrofied_toolbox::option;
 
@@ -16,19 +19,28 @@ fn when_option_some_should_evaluate_ok_expression() {
 
 #[test]
 fn when_option_none_should_evaluate_call_expression() {
+    cfg_if! {
+        if #[cfg(feature = "option-debug")] {
+            expect! { expected_stdout = "", "It was None\n" }
+        } else {
+            let expected_stdout = "";
+        }
+    }
+
     let expected = -42;
     let actual: isize;
 
-    let (_stdout, _stderr) = capture! {{
+    let (actual_stdout, _stderr) = capture! {{
         actual = option! {
-            @when foo_none(21)
-            @some (baz) => baz * 2
-            @none "It was None";
-                  error_value()
+            @when  foo_none(21)
+            @some  (baz) => baz * 2
+            @debug "It was None"
+            @none  error_value()
         };
     }};
 
     assert_eq!(expected, actual);
+    assert_eq!(expected_stdout, actual_stdout);
 
     fn error_value() -> isize { -42 }
 }
@@ -49,19 +61,28 @@ fn when_option_none_no_message_should_evaluate_call_expression() {
 
 #[test]
 fn when_option_none_should_evaluate_literal_expression() {
+    cfg_if! {
+        if #[cfg(feature = "option-debug")] {
+            expect! { expected_stdout = "", "It was None\n" }
+        } else {
+            let expected_stdout = "";
+        }
+    }
+
     let expected = -42;
     let actual: isize;
 
-    let (_stdout, _stderr) = capture! {{
+    let (actual_stdout, _stderr) = capture! {{
         actual = option! {
-            @when foo_none(21)
-            @some (baz) => baz * 2
-            @none "It was None";
-                  -42
+            @when  foo_none(21)
+            @some  (baz) => baz * 2
+            @debug "It was None"
+            @none  -42
         }
     }};
 
     assert_eq!(expected, actual);
+    assert_eq!(expected_stdout, actual_stdout);
 }
 
 #[test]

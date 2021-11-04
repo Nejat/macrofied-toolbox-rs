@@ -1,4 +1,7 @@
+use cfg_if::cfg_if;
 use test_toolbox::capture;
+#[cfg(feature = "option-debug")]
+use test_toolbox::expect;
 
 use macrofied_toolbox::result;
 
@@ -16,19 +19,28 @@ fn when_result_ok_should_evaluate_ok_expression() {
 
 #[test]
 fn when_result_err_should_evaluate_call_expression() {
+    cfg_if! {
+        if #[cfg(feature = "result-debug")] {
+            expect! { expected_stdout = "", "ERR: Foo Failed!\n" }
+        } else {
+            let expected_stdout = "";
+        }
+    }
+
     let expected = -42;
     let actual: isize;
 
-    let (_stdout, _stderr) = capture! {{
+    let (actual_stdout, _stderr) = capture! {
         actual = result! {
             @when  foo_err(21)
             @ok    (baz) => baz * 2
-            @error "ERR: {}", err;
-                   error_value()
-        };
-    }};
+            @debug "ERR: {}", err
+            @error error_value()
+        }
+    };
 
     assert_eq!(expected, actual);
+    assert_eq!(expected_stdout, actual_stdout);
 
     fn error_value() -> isize { -42 }
 }
@@ -49,19 +61,28 @@ fn when_result_err_no_message_should_evaluate_call_expression() {
 
 #[test]
 fn when_result_err_should_evaluate_literal_expression() {
+    cfg_if! {
+        if #[cfg(feature = "result-debug")] {
+            expect! { expected_stdout = "", "ERR: Foo Failed!\n" }
+        } else {
+            let expected_stdout = "";
+        }
+    }
+
     let expected = -42;
     let actual: isize;
 
-    let (_stdout, _stderr) = capture! {{
+    let (actual_stdout, _stderr) = capture! {
         actual = result! {
             @when  foo_err(21)
             @ok    (baz) => baz * 2
-            @error "ERR: {}", err;
-                   -42
+            @debug "ERR: {}", err
+            @error -42
         }
-    }};
+    };
 
     assert_eq!(expected, actual);
+    assert_eq!(expected_stdout, actual_stdout);
 }
 
 #[test]

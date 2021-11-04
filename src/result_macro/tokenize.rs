@@ -123,9 +123,10 @@ fn branch_only_ok(when: &WhenExpr, ok: &OnSuccess) -> TokenStream {
 fn build_debugged_error(result_macro: &ResultMacro) -> (Option<String>, TokenStream) {
     cfg_if! {
         if #[cfg(all(debug_assertions, feature = "result-debug"))] {
-            build_on_debug_and_on_error(
-                result_macro.debug.as_ref().unwrap(), result_macro.error.as_ref().unwrap(),
-            )
+            let (captured_err, on_error) = build_on_error(result_macro.error.as_ref().unwrap());
+            let (captured_dbg, on_debug) = build_message_stdout(result_macro.debug.as_ref().unwrap());
+
+            (captured_dbg.or(captured_err), quote! { #on_debug  #on_error })
         } else {
             build_on_error(result_macro.error.as_ref().unwrap())
         }
@@ -154,14 +155,6 @@ fn build_ok_branch(captured: &Option<String>) -> TokenStream {
     };
 
     if captured.is_some() { quote! { Ok(#capture) } } else { quote! { Ok(_) } }
-}
-
-#[cfg(all(debug_assertions, feature = "result-debug"))]
-fn build_on_debug_and_on_error(debug: &Message, error: &OnFail) -> (Option<String>, TokenStream) {
-    let (captured_err, on_error) = build_on_error(error);
-    let (captured_dbg, on_debug) = build_message_stdout(debug);
-
-    (captured_dbg.and(captured_err), quote! { #on_debug  #on_error })
 }
 
 fn build_on_error(error: &OnFail) -> (Option<String>, TokenStream) {
