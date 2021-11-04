@@ -225,6 +225,20 @@ fn when_message_with_a_range_expression_should_output() {
 }
 
 #[test]
+fn when_message_with_a_reference_expression_should_output() {
+    let expected_stdout = "some: 42\n";
+
+    let (actual_stdout, _actual_stderr) = capture! {
+        option! {
+            @when foo_ok()
+            @some (baz) => "some: {}", &(baz * 2)
+        }
+    };
+
+    assert_eq!(expected_stdout, actual_stdout);
+}
+
+#[test]
 fn when_message_with_a_repeat_expression_should_output() {
     let expected_stdout = "some: [42, 42, 42]\n";
 
