@@ -92,8 +92,8 @@ fn example(file_name: &str) -> Option<()> {
 ```
 
 ## Resources
-* [Docs](https://docs.rs/macrofied-toolbox/0.4.1/macrofied_toolbox/) for more detailed information
-* [Examples](https://github.com/Nejat/macrofied-toolbox-rs/tree/v0.4.1/examples) to see it in action
+* [Docs](https://docs.rs/macrofied-toolbox/0.4.2/macrofied_toolbox/) for more detailed information
+* [Examples](https://github.com/Nejat/macrofied-toolbox-rs/tree/v0.4.2/examples) to see it in action
 
 ## Usage
 
@@ -127,10 +127,10 @@ flexibility.
 
 ## Roadmap
 
-* [ ] support mutable `Ok<T>` and `Some<T>` values
 * [ ] ~~logging for both Ok\<T\> and Err\<E\>~~
 * [ ] ~~other patterns?~~
 
 ## Implemented
-* [x] `result!` - handles a `Result<T,E>` of an expression
-* [x] `option!` - handles an `Option<T>` of an expression
+* [x] `result!` - handles a `Result<T,E>` expression
+* [x] `option!` - handles an `Option<T>` expression
+* [x] support reference/mutable `Ok<T>` and `Some<T>` values
