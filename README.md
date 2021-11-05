@@ -127,10 +127,10 @@ flexibility.
 
 ## Roadmap
 
-* [ ] support mutable `Ok<T>` and `Some<T>` values
 * [ ] ~~logging for both Ok\<T\> and Err\<E\>~~
 * [ ] ~~other patterns?~~
 
 ## Implemented
-* [x] `result!` - handles a `Result<T,E>` of an expression
-* [x] `option!` - handles an `Option<T>` of an expression
+* [x] `result!` - handles a `Result<T,E>` expression
+* [x] `option!` - handles an `Option<T>` expression
+* [x] support reference/mutable `Ok<T>` and `Some<T>` values
