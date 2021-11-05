@@ -1,8 +1,11 @@
-use proc_macro2::{Ident, Span, TokenStream};
+use proc_macro2::TokenStream;
 use quote::ToTokens;
 
-use crate::common::{Message, OnFail, OnSuccess, trace_expansion, WhenExpr};
-use crate::result_macro::parse::OK_IDENT;
+use crate::common::{Capture, OnFail, OnSuccess, WhenExpr};
+#[cfg(all(debug_assertions, feature = "result-debug"))]
+use crate::common::Message;
+use crate::common::tokenize::build_captured;
+use crate::common::tracing::trace_expansion;
 use crate::result_macro::parts::Parts;
 use crate::result_macro::ResultMacro;
 
@@ -21,7 +24,7 @@ impl ToTokens for ResultMacro {
                     branch_only_ok(when, self.ok.as_ref().unwrap()),
                 #[cfg(not(all(debug_assertions, feature = "result-debug")))]
                 Parts::DEBUG =>
-                    branch_only_error(when, || (None, TokenStream::new())),
+                    branch_only_error(when, || (&None, TokenStream::new())),
                 #[cfg(all(debug_assertions, feature = "result-debug"))]
                 Parts::DEBUG =>
                     branch_only_error(when, || build_message_stdout(self.debug.as_ref().unwrap())),
@@ -50,8 +53,9 @@ impl ToTokens for ResultMacro {
     }
 }
 
-fn branch_ok_or_error(
-    when: &WhenExpr, ok: &OnSuccess, build_error: impl Fn() -> (Option<String>, TokenStream),
+fn branch_ok_or_error<'a>(
+    when: &'a WhenExpr, ok: &OnSuccess,
+    build_error: impl Fn() -> (&'a Option<Capture>, TokenStream),
 ) -> TokenStream {
     let when_expr = &when.expr;
     let (ok_branch, on_ok) = build_on_ok(ok);
@@ -71,17 +75,17 @@ fn branch_ok_or_error(
     }
 }
 
-fn branch_only_error(
-    when: &WhenExpr, build_error: impl Fn() -> (Option<String>, TokenStream),
+fn branch_only_error<'a>(
+    when: &'a WhenExpr, build_error: impl Fn() -> (&'a Option<Capture>, TokenStream),
 ) -> TokenStream {
     let when_expr = &when.expr;
     let (captured, on_error) = build_error();
-    let when_tried = if when.tried { quote! { return Err(err); } } else { TokenStream::new() };
+    let when_tried = if when.tried { quote! { ; return Err(err); } } else { TokenStream::new() };
 
     if captured.is_some() || when.tried {
-        quote! { if let Err(err) = #when_expr { #on_error; #when_tried } }
+        quote! { if let Err(err) = #when_expr { #on_error #when_tried } }
     } else {
-        quote! { if #when_expr.is_err() { #on_error; } }
+        quote! { if #when_expr.is_err() { #on_error } }
     }
 }
 
@@ -99,7 +103,7 @@ fn branch_only_ok(when: &WhenExpr, ok: &OnSuccess) -> TokenStream {
     };
 
     if when.tried {
-        let ok_branch = build_ok_branch(captured);
+        let ok_branch = build_branch_ok(captured);
 
         quote! {
             match #when_expr {
@@ -107,62 +111,53 @@ fn branch_only_ok(when: &WhenExpr, ok: &OnSuccess) -> TokenStream {
                 Err(err) => { return Err(err); }
             }
         }
-    } else {
-        match captured {
-            Some(captured) => {
-                let captured = Ident::new(captured, Span::call_site());
+    } else if captured.is_some() {
+        let captured = build_captured(captured);
 
-                quote! { if let Ok(#captured) = #when_expr { #on_ok; } }
-            }
-            None =>
-                quote! { if #when_expr.is_ok() { #on_ok; } },
-        }
+        quote! { if let Ok(#captured) = #when_expr { #on_ok; } }
+    } else {
+        quote! { if #when_expr.is_ok() { #on_ok; } }
     }
 }
 
-fn build_debugged_error(result_macro: &ResultMacro) -> (Option<String>, TokenStream) {
+fn build_branch_ok(captured: &Option<Capture>) -> TokenStream {
+    let capture = build_captured(captured);
+
+    quote! { Ok(#capture) }
+}
+
+fn build_debugged_error(result_macro: &ResultMacro) -> (&Option<Capture>, TokenStream) {
     cfg_if! {
         if #[cfg(all(debug_assertions, feature = "result-debug"))] {
             let (captured_err, on_error) = build_on_error(result_macro.error.as_ref().unwrap());
             let (captured_dbg, on_debug) = build_message_stdout(result_macro.debug.as_ref().unwrap());
+            let captured = if captured_dbg.is_some() { captured_dbg } else { captured_err };
 
-            (captured_dbg.or(captured_err), quote! { #on_debug  #on_error })
+            (captured, quote! { #on_debug  #on_error })
         } else {
             build_on_error(result_macro.error.as_ref().unwrap())
         }
     }
 }
 
-fn build_message_stderr(message: &Message) -> (Option<String>, TokenStream) {
-    let message_fmt = message.build_message();
-    let error_message = quote! { eprintln!(#message_fmt); };
-
-    (message.captured.clone(), error_message)
-}
-
 #[cfg(all(debug_assertions, feature = "result-debug"))]
-fn build_message_stdout(message: &Message) -> (Option<String>, TokenStream) {
+fn build_message_stdout(message: &Message) -> (&Option<Capture>, TokenStream) {
     let message_fmt = message.build_message();
-    let error_message = quote! { println!(#message_fmt); };
 
-    (message.captured.clone(), error_message)
+    (&message.captured, quote! { println!(#message_fmt); })
 }
 
-fn build_ok_branch(captured: &Option<String>) -> TokenStream {
-    let capture = match &captured {
-        None => Ident::new(OK_IDENT, Span::call_site()),
-        Some(capture) => Ident::new(capture, Span::call_site())
-    };
-
-    if captured.is_some() { quote! { Ok(#capture) } } else { quote! { Ok(_) } }
-}
-
-fn build_on_error(error: &OnFail) -> (Option<String>, TokenStream) {
+fn build_on_error(error: &OnFail) -> (&Option<Capture>, TokenStream) {
     let mut on_error = TokenStream::new();
-    let mut captured = None;
+    let mut captured = &None;
 
     if error.message.is_some() {
-        let (captured_error, message_error) = build_message_stderr(error.message.as_ref().unwrap());
+        let (captured_error, message_error) = {
+            let message_fmt = error.message.as_ref().unwrap().build_message();
+            let error_message = quote! { eprintln!(#message_fmt); };
+
+            (&error.message.as_ref().unwrap().captured, error_message)
+        };
 
         captured = captured_error;
 
@@ -173,7 +168,7 @@ fn build_on_error(error: &OnFail) -> (Option<String>, TokenStream) {
         let error_expr = &expr.expr;
 
         if captured.is_none() && expr.captured.is_some() {
-            captured = expr.captured.clone();
+            captured = &expr.captured;
         }
 
         on_error.extend(quote! { #error_expr });
@@ -191,7 +186,7 @@ fn build_on_ok(ok: &OnSuccess) -> (TokenStream, TokenStream) {
         OnSuccess::Expr(expr) => (expr.captured.clone(), expr.expr.to_token_stream())
     };
 
-    let ok_branch = build_ok_branch(&ok_captured);
+    let ok_branch = build_branch_ok(&ok_captured);
 
     (ok_branch, on_ok)
 }
