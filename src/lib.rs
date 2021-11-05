@@ -47,7 +47,7 @@
 //!
 //!         // * debug messages are conditionally compiled
 //!         //   and do not output anything in release builds
-//!         // * "err" contains the Result::Err value and can be optionally referenced,
+//!         // * "err" contains the Result::Err value and can be referenced,
 //!         //   it is discarded if it is not referenced
 //!     }
 //!
@@ -91,7 +91,7 @@
 //!
 //!         // * debug messages are conditionally compiled
 //!         //   and do not output anything in release builds
-//!         // * "err" contains the Result::Err value and can be optionally referenced,
+//!         // * "err" contains the Result::Err value and can be referenced,
 //!         //   it is discarded if it is not referenced
 //!     }
 //!
@@ -138,21 +138,22 @@ mod tests;
 /// sections `@some`, `@debug` and/or `@none`, at least one must be defined.
 /// 
 /// When the `option!` macro is used in place of an expression and the intention is to
-/// use the `Some(T)` value, the `@when` section can be skipped and replaced with a
-/// required simplified `@some` section, which behaves as the `@when` section, _* see
-/// below for more details_
+/// assign the `Some(T)` value, the `@when` section can be skipped and replaced with a
+/// simplified `@some` section, which behaves as the `@when` section, _* see below for
+/// more details_
 ///
-/// <br/>__\* _any_ `<expr>`_s which are code blocks, i.e._ `{ ... }` _, can not have an optional
-/// section terminator_ `;`__<br/>
+/// <br/>\* _code block_ `<expr>`_s, can not be terminated with a_
+/// `;`_, i.e._ `{ ... }`~~`;`~~<br/>
 ///
 /// ### `@when`
 ///
 /// The `@when` section is defined as `[@when] <expr>[?][;]`
 ///
-/// * `@when` - the identifier itself is optional
-/// * `<expr>` - an expression that must  evaluate to an `Option<T>` value
-/// * `[?]` - the try operator will return `None` after completing `@debug` and/or `@none`
-/// * `[;]` - optional section terminator
+/// * `@when` - _optional_, section identifier
+/// * `<expr>` - an expression that must evaluate to an `Option<T>` value
+/// * `[?]` - _optional_, try operator, returns `None` after completing
+///           `@debug` and/or `@none`
+/// * `[;]` - _optional_, section terminator
 ///
 /// __`Example A:`__ `@when foo();`<br/>
 /// __`Example B:`__ `@when foo()?;`<br/>
@@ -163,31 +164,34 @@ mod tests;
 ///
 /// * `@some` - required section identifier
 /// * __In Success Mode__
-///     * `[(identifier) =>]` - a custom defined identifier which is available in
-///                               the `message` or `expr`
-///     * `<message|expr>` - can access the custom defined identifier or the `some` keyword
-///         * `message` - outputs to `stdout` with a `println!` statement, therefore has the same `args`
-///         * `expr` - any expression to evaluate
-///     * `[;]` - optional section terminator<br/><br/>
-/// \* _only evaluates if the result of the `@when` expression is_ `Option::Some`<br/><br/>
+///     * `[(identifier) =>]` - _optional_, custom defined identifier which maps to
+///                             the `Some(T)` value
+///     * `<message|expr>`
+///         * `message` - outputs to `stdout` with a `println!` statement, therefore has
+///                       the same `args`
+///         * `expr` - any expression to evaluate<br/><br/>
+/// _* can access_ `Some(T)` _value with the_ `some` _keyword or custom identifier_<br/><br/>
+///     * `[;]` - _optional_, section terminator<br/><br/>
+/// \* _only evaluates if the result of the_ `@when` _expression is_ `Option::Some`<br/><br/>
 /// __`Example A:`__ `@some "success: {}", some;`<br/>
 /// __`Example B:`__ `@some (foo) => "success: {}", foo;`<br/>
 /// __`Example C:`__ `@some (foo) => { success(foo); }`<br/>
 /// * __In Expression Mode__
-///     * `<expr>` - an expression that must  evaluate to an `Option<T>` value
-///     * `[?]` - the try operator will return `None` after completing `@debug` and/or `@none`
-///     * `[;]` - optional section terminator<br/><br/>
+///     * `<expr>` - an expression that must evaluate to an `Option<T>` value
+///     * `[?]` - _optional_, try operator, returns `None` after completing
+///               `@debug` and/or `@none`
+///     * `[;]` - _optional_, section terminator<br/><br/>
 /// __`Example A:`__ `@some foo();`<br/>
 /// __`Example B:`__ `@some foo()?;`<br/>
 /// ### `@debug`
 ///
 /// The `@debug` section is defined as `@debug <message>[;]`
 ///
-/// \* _only evaluates if the result of the `@when` expression is_ `Option::None`
+/// \* _only evaluates if the result of the_ `@when` _expression is_ `Option::None`
 ///
 /// * `@debug` - required section identifier
 /// * `message` - outputs to `stdout` with a `println!` statement, therefore has the same `args`
-/// * `[;]` - optional section terminator
+/// * `[;]` - _optional_, section terminator
 ///
 /// __`Example:`__ `@debug "dbg: foo failed!";`
 ///
@@ -196,14 +200,14 @@ mod tests;
 /// The `@none` section is defined as `@none [<message>[;]][<expr>][;]`, must
 /// provide at least a `message` and/or `expr`
 ///
-/// \* _only evaluates if the result of the `@when` expression is_ `Option::None`
+/// \* _only evaluates if the result of the_ `@when` _expression is_ `Option::None`
 ///
 /// * `@none` - required section identifier
-/// * `[message][;]` - _optional_, outputs to `stderr` with a `println!` statement, therefore
-///                    has the same `args`, requires the `;` terminator if an `<expr>[;]` is
-///                    also defined
+/// * `[message][;]` - _optional_, outputs to_ `stderr` _with a_ `eprintln!` _statement,
+///                    therefore accepts the same_ `args`<br/><br/>
+/// \* _requires the `;` terminator if an_ `<expr>[;]` _is also defined_<br/><br/>
 /// * `[<expr>]` - _optional_, any expression to evaluate
-/// * `[;]` - optional section terminator
+/// * `[;]` - _optional_, section terminator
 ///
 /// __`Example A:`__ `@none { on_fail_baz(); }`<br/>
 /// __`Example B:`__ `@none "err: foo failed!"`<br/>
@@ -262,7 +266,7 @@ mod tests;
 /// assert_eq!(42, result);
 ///
 /// fn computed_value(input: usize) -> Option<usize> {
-///     if input == 21  {
+///     if input == 21 {
 ///         Some(input * 2)
 ///     } else {
 ///         None
@@ -284,45 +288,49 @@ pub fn option(input: TokenStream) -> TokenStream {
 /// defined.
 ///
 /// When the `result!` macro is used in place of an expression and the intention is to
-/// use the `Ok(T)` value, the `@when` section can be skipped and replaced with a
-/// required `@ok` section, which behaves as the `@when` section, _* see below
-/// for more details_
+/// assign the `Ok(T)` value, the `@when` section can be skipped and replaced with an
+/// `@ok` section, which behaves as the `@when` section, _* see below for more details_
 ///
-/// <br/>__\* _any_ `<expr>`_s which are code blocks, i.e._ `{ ... }` _, can not have an optional
-/// section terminator_ `;`__<br/>
+/// <br/>\* _code block_ `<expr>`_s, can not be terminated with a_
+/// `;`_, i.e._ `{ ... }`~~`;`~~<br/>
 ///
 /// ### `@when`
 ///
 /// The `@when` section is defined as `[@when] <expr>[?][;]`
 ///
-/// * `@when` - the identifier itself is optional
-/// * `<expr>` - an expression that must  evaluate to a `Result<T,E>` value
-/// * `[?]` - the try operator will return `Result::Err` after completing `@debug` and/or `@error`
-/// * `[;]` - optional section terminator
+/// * `@when` - _optional_, section identifier
+/// * `<expr>` - an expression that must evaluate to a `Result<T,E>` value
+/// * `[?]` - _optional_, try operator will, returns `Result::Err` after completing
+///           `@debug` and/or `@error`
+/// * `[;]` - _optional_, section terminator
 ///
 /// __`Example A:`__ `@when foo()?;`<br/>
 /// __`Example B:`__ `@when foo()?;`<br/>
 ///
 /// ### `@ok`
 ///
-/// The `@ok` section is defined as `@some [[(identifier) =>]<message|expr>[;]|[<expr>[?][;]]`
+/// The `@ok` section is defined as `@ok [[(identifier) =>]<message|expr>[;]|[<expr>[?][;]]`
+///
+/// \* _only evaluates if the result of the_ `@when` _expression is_ `Result::Ok`
 ///
 /// * `@ok` - required section identifier
 /// * __In Success Mode__
-///     * `[(identifier) =>]` - a custom defined identifier which is available in
-///                               the `message` or `expr`
-///     * `<message|expr>` - can access the custom defined identifier or the `ok` keyword
-///         * `message` - outputs to `stdout` with a `println!` statement, therefore has the same `args`
-///         * `expr` - any expression to evaluate
-///     * `[;]` - optional section terminator<br/><br/>
-/// \* _only evaluates if the result of the `@when` expression is_ `Result::Ok`<br/><br/>
+///     * `[(identifier) =>]` - _optional_, custom defined identifier which maps to
+///                             the `Ok(T)` value
+///     * `<message|expr>` -
+///         * `message` - outputs to `stdout` with a `println!` statement, therefore has
+///                       the same `args`
+///         * `expr` - any expression to evaluate<br/><br/>
+/// _* can access_ `Ok(T)` _value with the_ `ok` _keyword or custom identifier_<br/><br/>
+///     * `[;]` - _optional_, section terminator<br/><br/>
 /// __`Example:`__ `@ok "success: {}", ok;`<br/>
 /// __`Example:`__ `@ok (foo) => "success: {}", foo;`<br/>
 /// __`Example:`__ `@ok (foo) => { success(foo) }`<br/>
 /// * __In Expression Mode__
-///     * `<expr>` - an expression that must  evaluate to an `Option<T>` value
-///     * `[?]` - the try operator will return `None` after completing `@debug` and/or `@none`
-///     * `[;]` - optional section terminator<br/><br/>
+///     * `<expr>` - an expression that must evaluate to an `Option<T>` value
+///     * `[?]` - _optional_, try operator, returns `None` after completing
+///               `@debug` and/or `@none`
+///     * `[;]` - _optional_, section terminator<br/><br/>
 /// __`Example A:`__ `@ok foo();`<br/>
 /// __`Example B:`__ `@ok foo()?;`<br/>
 ///
@@ -330,12 +338,13 @@ pub fn option(input: TokenStream) -> TokenStream {
 ///
 /// The `@debug` section is defined as `@debug <message>[;]`
 ///
-/// \* _only evaluates if the result of the `@when` expression is_ `Result::Err`
+/// \* _only evaluates if the result of the_ `@when` _expression is_ `Result::Err`
 ///
 /// * `@debug` - required section identifier
-/// * `message` - outputs to `stdout` with a `println!` statement, therefore has the same `args`,
-///               can use optional `err` keyword to report `Result::Err(err)`
-/// * `[;]` - optional section terminator
+/// * `message` - outputs to `stdout` with a `println!` statement, therefore has
+///               the same `args`<br/><br/>
+/// \* _can access_ `Result::Err(err)` _with_ `err` _keyword_<br/><br/>
+/// * `[;]` - _optional_, section terminator
 ///
 /// __`Example:`__ `@debug "dbg: foo failed! - {}", err;`
 ///
@@ -344,15 +353,16 @@ pub fn option(input: TokenStream) -> TokenStream {
 /// The `@error` section is defined as `@error [<message>[;]][<expr>][;]`, must
 /// provide at least a `message` and/or `expr`
 ///
-/// \* _only evaluates if the result of the `@when` expression is_ `Result::Err`
+/// \* _only evaluates if the result of the_ `@when` _expression is_ `Result::Err`
 ///
 /// * `@error` - required section identifier
-/// * `[message][;]` - _optional_, outputs to `stderr` with a `println!` statement, therefore
-///                    has the same `args`, requires the `;` terminator if an `<expr>[;]` is
-///                    also defined, can use optional `err` keyword to report `Result::Err(err)`
-/// * `[<expr>]` - _optional_, any expression to evaluate, can use optional `err` keyword to
-///                report `Result::Err(err)`
-/// * `[;]` - optional section terminator
+/// * `[message][;]` - _optional_, outputs to `stderr` with a `eprintln!` statement, therefore
+///                    has the same `args`<br/><br/>
+/// \* _requires the_ `;` _terminator if an_ `<expr>[;]` _is also defined_<br/>
+/// \* _can access_ `Result::Err(err)` _with_ `err` _keyword_<br/><br/>
+/// * `[<expr>]` - _optional_, any expression to evaluate<br/><br/>
+/// \* _can access_ `Result::Err(err)` _with_ `err` _keyword_<br/><br/>
+/// * `[;]` - _optional_, section terminator
 ///
 /// __`Example A:`__ `@err "err: foo failed! - {}", err`<br/>
 /// __`Example B:`__ `{ on_fail_baz(err); }`<br/>
@@ -405,7 +415,7 @@ pub fn option(input: TokenStream) -> TokenStream {
 /// assert_eq!(42, result);
 ///
 /// fn computed_value(input: usize) -> Result<usize, &'static str> {
-///     if input == 21  {
+///     if input == 21 {
 ///         Ok(input * 2)
 ///     } else {
 ///         Err("I can't let you do that")
