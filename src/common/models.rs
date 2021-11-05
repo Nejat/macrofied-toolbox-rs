@@ -8,7 +8,7 @@ use syn::{Expr, Lit};
 
 pub struct Message {
     pub args: Option<Vec<Expr>>,
-    pub captured: Option<String>,
+    pub captured: Option<Capture>,
     pub fmt: Lit,
 }
 
@@ -24,7 +24,7 @@ impl Display for Message {
             "None".to_string()
         };
         let captured = if let Some(captured) = &self.captured {
-            format!("{:?}", captured)
+            format!("{}", captured)
         } else {
             "None".to_string()
         };
@@ -54,8 +54,35 @@ impl Message {
     }
 }
 
+#[derive(Clone)]
+pub struct Capture {
+    pub identifier: String,
+    pub mutable: bool,
+    pub reference: bool,
+}
+
+impl<T: Into<String>> From<T> for Capture {
+    fn from(identifier: T) -> Self {
+        Self {
+            identifier: identifier.into(),
+            mutable: false,
+            reference: false
+        }
+    }
+}
+
+#[cfg(feature = "trace")]
+impl Display for Capture {
+    fn fmt(&self, fmt: &mut Formatter<'_>) -> fmt::Result {
+        write!(
+            fmt, "{{ identifier: {:?}, mutable: {}, reference: {} }}",
+            self.identifier, self.mutable, self.reference
+        )
+    }
+}
+
 pub struct OnExpr {
-    pub captured: Option<String>,
+    pub captured: Option<Capture>,
     pub expr: Expr,
 }
 
@@ -63,7 +90,7 @@ pub struct OnExpr {
 impl Display for OnExpr {
     fn fmt(&self, fmt: &mut Formatter<'_>) -> fmt::Result {
         let captured = if let Some(captured) = &self.captured {
-            format!("{:?}", captured)
+            format!("{}", captured)
         } else {
             "None".to_string()
         };

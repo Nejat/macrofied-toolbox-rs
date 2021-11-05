@@ -1,7 +1,7 @@
 use proc_macro2::{Ident, Span};
 use syn::parse::{Parse, ParseStream};
 
-use crate::common::{OnExpr, OnFail, OnSuccess, trace_parsed, trace_source};
+use crate::common::{Capture, OnExpr, OnFail, OnSuccess, trace_parsed, trace_source};
 use crate::common::parse::{
     parse_expression, parse_expression_debug, parse_expression_success,
     parse_expression_when, parse_message, parse_optional_semicolon,
@@ -30,12 +30,12 @@ impl Parse for OptionMacro {
                     let some = Ident::new(SOME_IDENT, Span::call_site());
 
                     Some(OnSuccess::Expr(OnExpr {
-                        captured: Some(SOME_IDENT.to_string()),
+                        captured: Some(Capture::from(SOME_IDENT)),
                         expr: parse_quote! { #some },
                     }))
                 } else {
                     parse_expression_success(
-                        input, kw::some, SOME_SECTION, Some(SOME_IDENT.to_string()),
+                        input, kw::some, SOME_SECTION, Some(Capture::from(SOME_IDENT)),
                     )?
                 },
                 when,

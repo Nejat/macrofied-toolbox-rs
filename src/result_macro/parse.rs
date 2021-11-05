@@ -2,7 +2,7 @@ use proc_macro2::{Ident, Span};
 use quote::ToTokens;
 use syn::parse::{Parse, ParseStream};
 
-use crate::common::{OnExpr, OnFail, OnSuccess, trace_parsed, trace_source};
+use crate::common::{Capture, OnExpr, OnFail, OnSuccess, trace_parsed, trace_source};
 use crate::common::parse::{
     parse_expression, parse_expression_debug, parse_expression_success,
     parse_expression_when, parse_message, parse_optional_semicolon, utils,
@@ -32,14 +32,16 @@ impl Parse for ResultMacro {
                     let ok = Ident::new(OK_IDENT, Span::call_site());
 
                     Some(OnSuccess::Expr(OnExpr {
-                        captured: Some(OK_IDENT.to_string()),
+                        captured: Some(Capture::from(OK_IDENT)),
                         expr: parse_quote! { #ok },
                     }))
                 } else {
-                    parse_expression_success(input, kw::ok, OK_SECTION, Some(OK_IDENT.to_string()))?
+                    parse_expression_success(
+                        input, kw::ok, OK_SECTION, Some(Capture::from(OK_IDENT))
+                    )?
                 },
                 when,
-                debug: parse_expression_debug(input, &Some(ERR_IDENT.to_string()))?,
+                debug: parse_expression_debug(input, &Some(Capture::from(ERR_IDENT)))?,
                 error: parse_expression_error(input)?,
             })
         }
@@ -51,7 +53,7 @@ fn parse_expression_error(input: ParseStream) -> syn::Result<Option<OnFail>> {
         <Token![@]>::parse(input)?;
         <kw::error>::parse(input)?;
 
-        let message = parse_message(input, ERROR_SECTION, &Some(ERR_IDENT.to_string())).ok();
+        let message = parse_message(input, ERROR_SECTION, &Some(Capture::from(ERR_IDENT))).ok();
 
         let expr = if !input.is_empty() && !input.peek(Token![@]) {
             if message.is_some() {
@@ -63,7 +65,7 @@ fn parse_expression_error(input: ParseStream) -> syn::Result<Option<OnFail>> {
             } else {
                 let expr = parse_expression(input, ERROR_SECTION)?;
                 let captured = if utils::search_for_ident(expr.to_token_stream(), ERR_IDENT) {
-                    Some(ERR_IDENT.to_string())
+                    Some(Capture::from(ERR_IDENT))
                 } else {
                     None
                 };

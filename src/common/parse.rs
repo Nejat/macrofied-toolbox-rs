@@ -2,17 +2,36 @@ use proc_macro2::{Ident, Span};
 use quote::ToTokens;
 use syn::{Error, Expr, Lit};
 use syn::parse::{Parse, ParseStream, Peek};
-use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
 use syn::token::Paren;
 
 use crate::common::{Message, OnSuccess, WhenExpr};
+#[cfg(any(feature = "result", feature = "option"))]
+use crate::common::models::Capture;
 use crate::common::models::OnExpr;
 use crate::common::parse::utils::search_for_ident;
 
 mod kw {
     custom_keyword![debug];
     custom_keyword![when];
+}
+
+impl Parse for Capture {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let reference = input.peek(Token![&]);
+
+        if reference { <Token![&]>::parse(input)?; }
+
+        let mutable = input.peek(Token!(mut));
+
+        if mutable { <Token![mut]>::parse(input)?; }
+
+        Ok(Self {
+            identifier: <Ident>::parse(input)?.to_string(),
+            mutable,
+            reference,
+        })
+    }
 }
 
 pub fn decode_expr_type(expr: &Expr) -> &'static str {
@@ -62,7 +81,7 @@ pub fn decode_expr_type(expr: &Expr) -> &'static str {
 }
 
 pub fn parse_expression_success<T>(
-    input: ParseStream, token: T, section: &str, capture: Option<String>,
+    input: ParseStream, token: T, section: &str, capture: Option<Capture>,
 ) -> syn::Result<Option<OnSuccess>>
     where T: Peek
 {
@@ -73,21 +92,11 @@ pub fn parse_expression_success<T>(
         let mut captured = capture;
 
         if input.peek(Paren) {
-            let capture_span = input.span();
             let content;
 
             parenthesized!(content in input);
 
-            let fields: Punctuated<Ident, Token![,]> = content.parse_terminated(Ident::parse)?;
-
-            if fields.len() != 1 {
-                return Err(Error::new(
-                    capture_span,
-                    format!("\"{}\" is not valid, use only one value", fields.to_token_stream()),
-                ));
-            }
-
-            captured = Some(fields[0].to_string());
+            captured = Some(content.parse::<Capture>()?);
 
             <Token![=>]>::parse(input)?;
         }
@@ -127,13 +136,13 @@ pub fn parse_expression(input: ParseStream, section: &str) -> syn::Result<Expr> 
 }
 
 pub fn parse_expression_debug(
-    input: ParseStream, ident: &Option<String>,
+    input: ParseStream, capture: &Option<Capture>,
 ) -> syn::Result<Option<Message>> {
     if input.peek(Token![@]) && input.peek2(kw::debug) {
         <Token![@]>::parse(input)?;
         <kw::debug>::parse(input)?;
 
-        let message = parse_message(input, "debug", ident)?;
+        let message = parse_message(input, "debug", capture)?;
 
         parse_optional_semicolon(input)?;
 
@@ -194,7 +203,7 @@ pub fn parse_expression_when<T: Peek>(input: ParseStream, success_kw: T) -> syn:
 }
 
 pub fn parse_message(
-    input: ParseStream, section: &str, ident: &Option<String>,
+    input: ParseStream, section: &str, capture: &Option<Capture>,
 ) -> syn::Result<Message> {
     if let Some(literal) = input.cursor().literal() {
         if literal.0.to_string().starts_with('\"') {
@@ -206,16 +215,16 @@ pub fn parse_message(
             }
 
             let mut exprs = Vec::new();
-            let mut captured = None;
+            let mut captured = &None;
 
             while input.peek(Token![,]) {
                 <Token![,]>::parse(input)?;
 
                 let expr = <Expr>::parse(input)?;
 
-                if let Some(checked) = &ident {
-                    if search_for_ident(expr.to_token_stream(), checked) {
-                        captured = Some(checked.to_string());
+                if let Some(checked) = capture {
+                    if search_for_ident(expr.to_token_stream(), &checked.identifier) {
+                        captured = capture;
                     }
                 }
 
@@ -243,7 +252,7 @@ pub fn parse_message(
 
             return Ok(Message {
                 args: if exprs.is_empty() { None } else { Some(exprs) },
-                captured,
+                captured: captured.clone(),
                 fmt: literal,
             });
         }
