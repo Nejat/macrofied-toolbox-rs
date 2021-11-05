@@ -1,10 +1,11 @@
 use proc_macro2::TokenStream;
 use quote::ToTokens;
 
-use crate::common::{Capture, OnFail, OnSuccess, trace_expansion, WhenExpr};
+use crate::common::{Capture, OnFail, OnSuccess, WhenExpr};
 #[cfg(all(debug_assertions, feature = "result-debug"))]
 use crate::common::Message;
 use crate::common::tokenize::build_captured;
+use crate::common::tracing::trace_expansion;
 use crate::result_macro::parts::Parts;
 use crate::result_macro::ResultMacro;
 

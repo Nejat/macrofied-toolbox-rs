@@ -1,7 +1,8 @@
 use syn::parse::{Parse, ParseStream};
 
-use crate::common::{Capture, trace_parsed, trace_source};
+use crate::common::Capture;
 use crate::common::parse::{parse_debug, parse_failed, parse_successful, parse_when};
+use crate::common::tracing::{trace_parsed, trace_source};
 use crate::result_macro::ResultMacro;
 
 mod kw {
