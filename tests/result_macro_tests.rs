@@ -316,6 +316,34 @@ fn when_ok_result_should_output_ok() {
     assert_eq!(expected_stdout, actual_stdout);
 }
 
+#[test]
+fn when_mut_result_should_evaluate_ok() {
+    let expected = 42;
+    let actual = result! {
+        @when foo_ok()
+        @ok   (mut ok) => { ok = ok * 2 - 42; ok }
+        @error 0
+    };
+
+    assert_eq!(expected, actual);
+}
+
+#[test]
+fn when_mut_reference_result_should_evaluate_ok() {
+    let expected = 42;
+    let actual: usize = result! {
+        @when  foo_ok_ref(&mut 42)
+        @ok    (&mut foo) => evaluate(foo)
+        @error 0
+    };
+
+    assert_eq!(expected, actual);
+
+    fn evaluate(ok: usize) -> usize { ok * 2 - 42 }
+
+    fn foo_ok_ref(value: &mut usize) -> Result<&mut usize, &'static str> { Ok(value) }
+}
+
 fn foo_ok() -> Result<usize, &'static str> {
     Ok(42)
 }

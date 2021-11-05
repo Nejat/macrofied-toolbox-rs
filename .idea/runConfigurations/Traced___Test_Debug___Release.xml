@@ -1,0 +1,9 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Traced - Test Debug &amp; Release" type="CompoundRunConfigurationType">
+    <toRun name="Traced - Test All Debug" type="CargoCommandRunConfiguration" />
+    <toRun name="Traced - Test All-Debug Debug" type="CargoCommandRunConfiguration" />
+    <toRun name="Traced - Test All Release" type="CargoCommandRunConfiguration" />
+    <toRun name="Traced - Test All-Debug Release" type="CargoCommandRunConfiguration" />
+    <method v="2" />
+  </configuration>
+</component>

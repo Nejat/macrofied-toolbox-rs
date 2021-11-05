@@ -1,0 +1,5 @@
+error: block can not contain a try expression
+ --> tests/option_compile_failed/try_in_block_when_expression_should_fail_to_compile.rs:8:19
+  |
+8 |             @when { foo()? }
+  |                   ^^^^^^^^^^

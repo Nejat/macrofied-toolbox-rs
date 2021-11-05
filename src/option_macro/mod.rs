@@ -2,29 +2,29 @@
 use std::fmt::{self, Display, Formatter};
 
 use crate::common::{Message, OnFail, OnSuccess, WhenExpr};
-use crate::result::parts::Parts;
+use crate::option_macro::parts::Parts;
 
 mod parse;
 mod parts;
 mod tokenize;
 
-pub struct ResultMacro {
+pub struct OptionMacro {
     when: WhenExpr,
-    ok: Option<OnSuccess>,
+    some: Option<OnSuccess>,
     debug: Option<Message>,
-    error: Option<OnFail>,
+    none: Option<OnFail>,
 }
 
 #[cfg(feature = "trace")]
-impl Display for ResultMacro {
+impl Display for OptionMacro {
     fn fmt(&self, fmt: &mut Formatter<'_>) -> fmt::Result {
-        let ok = format_option(&self.ok);
+        let some = format_option(&self.some);
         let debug = format_option(&self.debug);
-        let error = format_option(&self.error);
+        let none = format_option(&self.none);
 
         return write!(
-            fmt, "{{\n  when: {},\n  ok: {},\n  debug: {},\n  error: {}\n}}",
-            self.when, ok, debug, error
+            fmt, "option! {{\n  when: {},\n  some: {},\n  debug: {},\n  none: {}\n}}",
+            self.when, some, debug, none
         );
 
         //noinspection DuplicatedCode
@@ -34,10 +34,10 @@ impl Display for ResultMacro {
     }
 }
 
-impl ResultMacro {
+impl OptionMacro {
     fn definition(&self) -> Parts {
-        (if self.ok.is_some() { Parts::OK } else { Parts::NONE }) |
-            (if self.debug.is_some() { Parts::DEBUG } else { Parts::NONE }) |
-            (if self.error.is_some() { Parts::ERROR } else { Parts::NONE })
+        (if self.some.is_some() { Parts::SOME } else { Parts::NOTHING }) |
+            (if self.debug.is_some() { Parts::DEBUG } else { Parts::NOTHING }) |
+            (if self.none.is_some() { Parts::NONE } else { Parts::NOTHING })
     }
 }

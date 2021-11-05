@@ -7,7 +7,7 @@
 #![allow(clippy::module_name_repetitions)]
 #![allow(clippy::items_after_statements)]
 // ==============================================================
-#![doc(html_root_url = "https://docs.rs/macrofied-toolbox/0.3.0")]
+#![doc(html_root_url = "https://docs.rs/macrofied-toolbox/0.4.0")]
 
 //! This library provides an ergonomic experience of adding debugging messages to rust's
 //! `Result<T,E>` and `Option<T>` patterns
@@ -21,7 +21,7 @@
 //! consistently throughout your project.
 //!
 //! ### `Result<T,E>`
-//! ```no_run
+//! ```rust,no_run
 //! # use std::fs::File;
 //! # use std::io;
 //! # use std::io::{BufWriter, Write};
@@ -57,7 +57,7 @@
 //!
 //! ### `Option<T>`
 //!
-//! ```no_run
+//! ```rust,no_run
 //! # use std::fs::File;
 //! # use std::io;
 //! # use std::io::{BufWriter, Write};
@@ -122,10 +122,10 @@ use quote::ToTokens;
 mod common;
 
 #[cfg(feature = "option")]
-mod option;
+mod option_macro;
 
 #[cfg(feature = "result")]
-mod result;
+mod result_macro;
 
 #[cfg(test)]
 mod tests;
@@ -134,9 +134,13 @@ mod tests;
 ///
 /// ## Anotomy of the `option!` macro
 ///
-/// The `option!` macro consists of a mandatory `@when` section and one to three
-/// optional evaluation sections `@some`, `@debug` and/or `@none`, at least one must be
-/// defined.
+/// The `option!` macro consists of a `@when` section and one to three optional evaluation 
+/// sections `@some`, `@debug` and/or `@none`, at least one must be defined.
+/// 
+/// When the `option!` macro is used in place of an expression and the intention is to
+/// use the `Some(T)` value, the `@when` section can be skipped and replaced with a
+/// required simplified `@some` section, which behaves as the `@when` section, _* see
+/// below for more details_
 ///
 /// <br/>__\* _any_ `<expr>`_s which are code blocks, i.e._ `{ ... }` _, can not have an optional
 /// section terminator_ `;`__<br/>
@@ -155,29 +159,33 @@ mod tests;
 ///
 /// ### `@some`
 ///
-/// The `@some` section is defined as `@some [(identifier) =>]<message|expr>[;]`
+/// The `@some` section is defined as `@some <[[(identifier) =>]<message|expr>[;]|[<expr>[?][;]]]`
 ///
-/// \* _only evaluates if the result of the `@when` expression is_ `Option::Some`
-///
-/// * `@some` - mandatory section identifier
-/// * `[(identifier) =>]` - a custom defined identifier which is available in
-///                           the `message` or `expr`
-/// * `<message|expr>` - can access the custom defined identifier or the `some` keyword
-///     * `message` - outputs to `stdout` with a `println!` statement, therefore has the same `args`
-///     * `expr` - any expression to evaluate
-/// * `[;]` - optional section terminator
-///
+/// * `@some` - required section identifier
+/// * __In Success Mode__
+///     * `[(identifier) =>]` - a custom defined identifier which is available in
+///                               the `message` or `expr`
+///     * `<message|expr>` - can access the custom defined identifier or the `some` keyword
+///         * `message` - outputs to `stdout` with a `println!` statement, therefore has the same `args`
+///         * `expr` - any expression to evaluate
+///     * `[;]` - optional section terminator<br/><br/>
+/// \* _only evaluates if the result of the `@when` expression is_ `Option::Some`<br/><br/>
 /// __`Example A:`__ `@some "success: {}", some;`<br/>
 /// __`Example B:`__ `@some (foo) => "success: {}", foo;`<br/>
 /// __`Example C:`__ `@some (foo) => { success(foo); }`<br/>
-///
+/// * __In Expression Mode__
+///     * `<expr>` - an expression that must  evaluate to an `Option<T>` value
+///     * `[?]` - the try operator will return `None` after completing `@debug` and/or `@none`
+///     * `[;]` - optional section terminator<br/><br/>
+/// __`Example A:`__ `@some foo();`<br/>
+/// __`Example B:`__ `@some foo()?;`<br/>
 /// ### `@debug`
 ///
 /// The `@debug` section is defined as `@debug <message>[;]`
 ///
 /// \* _only evaluates if the result of the `@when` expression is_ `Option::None`
 ///
-/// * `@debug` - mandatory section identifier
+/// * `@debug` - required section identifier
 /// * `message` - outputs to `stdout` with a `println!` statement, therefore has the same `args`
 /// * `[;]` - optional section terminator
 ///
@@ -190,7 +198,7 @@ mod tests;
 ///
 /// \* _only evaluates if the result of the `@when` expression is_ `Option::None`
 ///
-/// * `@none` - mandatory section identifier
+/// * `@none` - required section identifier
 /// * `[message][;]` - _optional_, outputs to `stderr` with a `println!` statement, therefore
 ///                    has the same `args`, requires the `;` terminator if an `<expr>[;]` is
 ///                    also defined
@@ -203,7 +211,8 @@ mod tests;
 ///
 /// ## Example
 ///
-/// ```no_run
+/// * Success Mode
+/// ```rust,no_run
 /// # use std::fs::File;
 /// # use std::io;
 /// # use std::io::{BufWriter, Write};
@@ -240,19 +249,44 @@ mod tests;
 ///     // some very import recovery logic
 /// }
 /// ```
+/// * Expression Mode
+/// ```rust
+/// use macrofied_toolbox::option;
+///
+/// let result = option! {
+///     @some  computed_value(21)
+///     @debug "Invalid input"
+///     @none  0
+/// };
+///
+/// assert_eq!(42, result);
+///
+/// fn computed_value(input: usize) -> Option<usize> {
+///     if input == 21  {
+///         Some(input * 2)
+///     } else {
+///         None
+///     }
+/// }
+/// ```
 #[cfg(feature = "option")]
 #[proc_macro]
 pub fn option(input: TokenStream) -> TokenStream {
-    parse_macro_input!(input as option::OptionMacro).into_token_stream().into()
+    parse_macro_input!(input as option_macro::OptionMacro).into_token_stream().into()
 }
 
 /// a macro for making debugging more ergonomic when handling `Result<T,E>` results
 ///
 /// ## Anotomy of the `result!` macro
 ///
-/// The `result!` macro consists of a mandatory `@when` section and one to three
+/// The `result!` macro consists of a required `@when` section and one to three
 /// optional evaluation sections `@ok`, `@debug` and/or `@error`, at least one must be
 /// defined.
+///
+/// When the `result!` macro is used in place of an expression and the intention is to
+/// use the `Ok(T)` value, the `@when` section can be skipped and replaced with a
+/// required `@ok` section, which behaves as the `@when` section, _* see below
+/// for more details_
 ///
 /// <br/>__\* _any_ `<expr>`_s which are code blocks, i.e._ `{ ... }` _, can not have an optional
 /// section terminator_ `;`__<br/>
@@ -271,21 +305,26 @@ pub fn option(input: TokenStream) -> TokenStream {
 ///
 /// ### `@ok`
 ///
-/// The `@ok` section is defined as `@some [(identifier) =>]<message|expr>[;]`
+/// The `@ok` section is defined as `@some [[(identifier) =>]<message|expr>[;]|[<expr>[?][;]]`
 ///
-/// \* _only evaluates if the result of the `@when` expression is_ `Result::Ok`
-///
-/// * `@ok` - mandatory section identifier
-/// * `[(identifier) =>]` - a custom defined identifier which is available in
-///                           the `message` or `expr`
-/// * `<message|expr>` - can access the custom defined identifier or the `ok` keyword
-///     * `message` - outputs to `stdout` with a `println!` statement, therefore has the same `args`
-///     * `expr` - any expression to evaluate
-/// * `[;]` - optional section terminator
-///
+/// * `@ok` - required section identifier
+/// * __In Success Mode__
+///     * `[(identifier) =>]` - a custom defined identifier which is available in
+///                               the `message` or `expr`
+///     * `<message|expr>` - can access the custom defined identifier or the `ok` keyword
+///         * `message` - outputs to `stdout` with a `println!` statement, therefore has the same `args`
+///         * `expr` - any expression to evaluate
+///     * `[;]` - optional section terminator<br/><br/>
+/// \* _only evaluates if the result of the `@when` expression is_ `Result::Ok`<br/><br/>
 /// __`Example:`__ `@ok "success: {}", ok;`<br/>
 /// __`Example:`__ `@ok (foo) => "success: {}", foo;`<br/>
 /// __`Example:`__ `@ok (foo) => { success(foo) }`<br/>
+/// * __In Expression Mode__
+///     * `<expr>` - an expression that must  evaluate to an `Option<T>` value
+///     * `[?]` - the try operator will return `None` after completing `@debug` and/or `@none`
+///     * `[;]` - optional section terminator<br/><br/>
+/// __`Example A:`__ `@ok foo();`<br/>
+/// __`Example B:`__ `@ok foo()?;`<br/>
 ///
 /// ### `@debug`
 ///
@@ -293,7 +332,7 @@ pub fn option(input: TokenStream) -> TokenStream {
 ///
 /// \* _only evaluates if the result of the `@when` expression is_ `Result::Err`
 ///
-/// * `@debug` - mandatory section identifier
+/// * `@debug` - required section identifier
 /// * `message` - outputs to `stdout` with a `println!` statement, therefore has the same `args`,
 ///               can use optional `err` keyword to report `Result::Err(err)`
 /// * `[;]` - optional section terminator
@@ -307,7 +346,7 @@ pub fn option(input: TokenStream) -> TokenStream {
 ///
 /// \* _only evaluates if the result of the `@when` expression is_ `Result::Err`
 ///
-/// * `@error` - mandatory section identifier
+/// * `@error` - required section identifier
 /// * `[message][;]` - _optional_, outputs to `stderr` with a `println!` statement, therefore
 ///                    has the same `args`, requires the `;` terminator if an `<expr>[;]` is
 ///                    also defined, can use optional `err` keyword to report `Result::Err(err)`
@@ -321,7 +360,9 @@ pub fn option(input: TokenStream) -> TokenStream {
 ///
 /// ## Example
 ///
-/// ```no_run
+/// * Success Mode
+///
+/// ```rust,no_run
 /// # use std::fs::File;
 /// # use std::io;
 /// # use std::io::{BufWriter, Write};
@@ -351,8 +392,28 @@ pub fn option(input: TokenStream) -> TokenStream {
 ///     // some very import recovery logic
 /// }
 /// ```
+/// * Expression Mode
+/// ```rust
+/// use macrofied_toolbox::result;
+///
+/// let result = result! {
+///     @ok    computed_value(21)
+///     @debug "ERR: {:?}", err
+///     @error 0
+/// };
+///
+/// assert_eq!(42, result);
+///
+/// fn computed_value(input: usize) -> Result<usize, &'static str> {
+///     if input == 21  {
+///         Ok(input * 2)
+///     } else {
+///         Err("I can't let you do that")
+///     }
+/// }
+/// ```
 #[cfg(feature = "result")]
 #[proc_macro]
 pub fn result(input: TokenStream) -> TokenStream {
-    parse_macro_input!(input as result::ResultMacro).into_token_stream().into()
+    parse_macro_input!(input as result_macro::ResultMacro).into_token_stream().into()
 }

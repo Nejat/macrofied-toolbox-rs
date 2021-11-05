@@ -246,7 +246,7 @@ fn when_none_option_without_some_should_output_none_only() {
 }
 
 #[test]
-fn when_some_only_custom_result_should_output_some() {
+fn when_some_only_custom_option_should_output_some() {
     let expected_stdout = "some: 42\n";
 
     let (actual_stdout, _actual_stderr) = capture! {
@@ -260,7 +260,7 @@ fn when_some_only_custom_result_should_output_some() {
 }
 
 #[test]
-fn when_some_only_custom_result_should_eval_some() {
+fn when_some_only_custom_option_should_eval_some() {
     let expected = 42;
     let mut actual = 0;
 
@@ -273,7 +273,7 @@ fn when_some_only_custom_result_should_eval_some() {
 }
 
 #[test]
-fn when_some_only_result_should_eval_some() {
+fn when_some_only_option_should_eval_some() {
     let expected = 42;
     let mut actual = 0;
 
@@ -286,7 +286,7 @@ fn when_some_only_result_should_eval_some() {
 }
 
 #[test]
-fn when_some_only_result_should_output_some() {
+fn when_some_only_option_should_output_some() {
     let expected_stdout = "some: 42\n";
 
     let (actual_stdout, _actual_stderr) = capture! {
@@ -300,7 +300,7 @@ fn when_some_only_result_should_output_some() {
 }
 
 #[test]
-fn when_some_result_should_output_some() {
+fn when_some_option_should_output_some() {
     let expected_stdout = "some: 42\n";
 
     let (actual_stdout, _actual_stderr) = capture! {
@@ -314,6 +314,34 @@ fn when_some_result_should_output_some() {
     };
 
     assert_eq!(expected_stdout, actual_stdout);
+}
+
+#[test]
+fn when_mut_option_should_evaluate_some() {
+    let expected = 42;
+    let actual = option! {
+        @when foo_some()
+        @some (mut ok) => { ok = ok * 2 - 42; ok }
+        @none 0
+    };
+
+    assert_eq!(expected, actual);
+}
+
+#[test]
+fn when_mut_reference_option_should_evaluate_some() {
+    let expected = 42;
+    let actual: usize = option! {
+        @when foo_some_ref(&mut 42)
+        @some (&mut foo) => evaluate(foo)
+        @none 0
+    };
+
+    assert_eq!(expected, actual);
+
+    fn evaluate(ok: usize) -> usize { ok * 2 - 42 }
+
+    fn foo_some_ref(value: &mut usize) -> Option<&mut usize> { Some(value) }
 }
 
 fn foo_some() -> Option<usize> {

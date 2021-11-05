@@ -1,7 +1,7 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Clippy Debug &amp; Release" type="CompoundRunConfigurationType">
-    <toRun name="Clippy Debug" type="CargoCommandRunConfiguration" />
     <toRun name="Clippy Release" type="CargoCommandRunConfiguration" />
+    <toRun name="Clippy Debug" type="CargoCommandRunConfiguration" />
     <method v="2" />
   </configuration>
 </component>

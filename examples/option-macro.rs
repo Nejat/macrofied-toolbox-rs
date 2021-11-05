@@ -11,7 +11,7 @@ fn main() {
             @some  (foo_value) => "will not be seen {}", foo_value;
             @debug "dbg msg: {}", -24;
             @none  "none msg: {}", -42;
-                   { println!("none expression") }
+                   println!("none expression")
         }
     } else {
         option! {
@@ -19,7 +19,7 @@ fn main() {
             @some  "has some: {}", some;
             @debug "dbg msg will not be seen: {}", -24;
             @none  "none msg will not be seen: {}", -42;
-                   { println!("none expression not run") }
+                   println!("none expression not run")
         }
     }
 
