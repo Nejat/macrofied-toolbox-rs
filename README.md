@@ -92,8 +92,8 @@ fn example(file_name: &str) -> Option<()> {
 ```
 
 ## Resources
-* [Docs](https://docs.rs/macrofied-toolbox/0.4.0/macrofied_toolbox/) for more detailed information
-* [Examples](https://github.com/Nejat/macrofied-toolbox-rs/tree/v0.4.0/examples) to see it in action
+* [Docs](https://docs.rs/macrofied-toolbox/0.4.1/macrofied_toolbox/) for more detailed information
+* [Examples](https://github.com/Nejat/macrofied-toolbox-rs/tree/v0.4.1/examples) to see it in action
 
 ## Usage
 
