@@ -5,7 +5,7 @@ use syn::parse::{Parse, ParseStream, Peek};
 use syn::spanned::Spanned;
 use syn::token::Paren;
 
-use crate::common::{Message, OnSuccess, WhenExpr};
+use crate::common::{Message, OnFail, OnSuccess, WhenExpr};
 #[cfg(any(feature = "result", feature = "option"))]
 use crate::common::models::Capture;
 use crate::common::models::OnExpr;
@@ -15,6 +15,8 @@ mod kw {
     custom_keyword![debug];
     custom_keyword![when];
 }
+
+const DEBUG_SECTION: &str = "debug";
 
 impl Parse for Capture {
     fn parse(input: ParseStream) -> syn::Result<Self> {
@@ -80,69 +82,14 @@ pub fn decode_expr_type(expr: &Expr) -> &'static str {
     }
 }
 
-pub fn parse_expression_success<T>(
-    input: ParseStream, token: T, section: &str, capture: Option<Capture>,
-) -> syn::Result<Option<OnSuccess>>
-    where T: Peek
-{
-    if input.peek(Token![@]) && input.peek2(token) {
-        <Token![@]>::parse(input)?;
-        <Ident>::parse(input)?;
-
-        let mut captured = capture;
-
-        if input.peek(Paren) {
-            let content;
-
-            parenthesized!(content in input);
-
-            captured = Some(content.parse::<Capture>()?);
-
-            <Token![=>]>::parse(input)?;
-        }
-
-        Ok(Some(
-            if let Ok(message) = parse_message(input, section, &captured) {
-                parse_optional_semicolon(input)?;
-                OnSuccess::Message(message)
-            } else {
-                let expr = parse_expression(input, section)?;
-
-                OnSuccess::Expr(OnExpr { captured, expr })
-            }
-        ))
-    } else {
-        Ok(None)
-    }
-}
-
-pub fn parse_expression(input: ParseStream, section: &str) -> syn::Result<Expr> {
-    let expr = <Expr>::parse(input)?;
-
-    match expr {
-        Expr::Block(_) | Expr::TryBlock(_) | Expr::Unsafe(_) => {}
-        Expr::Let(_) | Expr::Struct(_)  =>
-            return Err(Error::new(
-                expr.span(),
-                format!(
-                    "{:?} is not a supported {} expression, try placing it into a code block",
-                    decode_expr_type(&expr), section
-                ),
-            )),
-        _ => parse_optional_semicolon(input)?
-    }
-
-    Ok(expr)
-}
-
-pub fn parse_expression_debug(
+pub fn parse_debug(
     input: ParseStream, capture: &Option<Capture>,
 ) -> syn::Result<Option<Message>> {
     if input.peek(Token![@]) && input.peek2(kw::debug) {
         <Token![@]>::parse(input)?;
         <kw::debug>::parse(input)?;
 
-        let message = parse_message(input, "debug", capture)?;
+        let message = parse_message(input, DEBUG_SECTION, capture)?;
 
         parse_optional_semicolon(input)?;
 
@@ -152,53 +99,43 @@ pub fn parse_expression_debug(
     }
 }
 
-pub fn parse_expression_when<T: Peek>(input: ParseStream, success_kw: T) -> syn::Result<WhenExpr> {
-    if input.peek(Token![@]) {
+pub fn parse_failed<T: Peek>(
+    input: ParseStream, token: T, section: &str, capture: Option<Capture>,
+) -> syn::Result<Option<OnFail>> {
+    if input.peek(Token![@]) && input.peek2(token) {
         <Token![@]>::parse(input)?;
-    }
-    let ok_when: bool = if input.peek(kw::when) {
-        <kw::when>::parse(input)?;
-
-        false
-    } else if input.peek(success_kw) {
         <Ident>::parse(input)?;
 
-        true
+        let message = parse_message(input, section, &capture).ok();
+
+        let expr = if !input.is_empty() && !input.peek(Token![@]) {
+            if message.is_some() {
+                <Token![;]>::parse(input)?;
+            }
+
+            if input.is_empty() {
+                None
+            } else {
+                let expr = parse_expression(input, section)?;
+                let captured = capture.and_then(
+                    |capture| if utils::search_for_ident(expr.to_token_stream(), &capture.identifier) {
+                        Some(capture)
+                    } else {
+                        None
+                    }
+                );
+
+                Some(OnExpr { captured, expr })
+            }
+        } else {
+            parse_optional_semicolon(input)?;
+
+            None
+        };
+
+        Ok(Some(OnFail { expr, message }))
     } else {
-        return Err(Error::new(
-            Span::call_site(), "expected @when or @ok expression",
-        ));
-    };
-
-    let expr = <Expr>::parse(input)?;
-
-    match expr {
-        Expr::Await(_) | Expr::Call(_) |
-        Expr::Cast(_) | Expr::Field(_) |
-        Expr::Group(_) | Expr::If(_) |
-        Expr::Index(_) | Expr::Macro(_) |
-        Expr::Match(_) | Expr::MethodCall(_) |
-        Expr::Path(_) | Expr::Reference(_) => {
-            parse_optional_semicolon(input)?;
-
-            Ok(WhenExpr { expr, tried: false, ok_when })
-        }
-        Expr::Try(try_expr) => {
-            let tried = true;
-            let expr = try_expr.expr.as_ref().clone();
-
-            parse_optional_semicolon(input)?;
-
-            Ok(WhenExpr { expr, tried, ok_when })
-        }
-        Expr::Block(_) if utils::block_contains_try(&expr) =>
-            Err(Error::new(expr.span(), "block can not contain a try expression")),
-        Expr::Block(_) =>
-            Ok(WhenExpr { expr, tried: false, ok_when }),
-        _ => Err(Error::new(
-            expr.span(),
-            format!("{:?} is not a supported when expression", decode_expr_type(&expr)),
-        ))
+        Ok(None)
     }
 }
 
@@ -261,7 +198,127 @@ pub fn parse_message(
     Err(Error::new(Span::call_site(), "No Message"))
 }
 
-pub fn parse_optional_semicolon(input: ParseStream) -> syn::Result<()> {
+pub fn parse_successful<T: Peek>(
+    input: ParseStream, when: &WhenExpr, capture_id: &str, section: &str, token: T,
+) -> syn::Result<Option<OnSuccess>> {
+    let capture = Some(Capture::from(capture_id));
+
+    Ok(if when.ok_when {
+        let success = Ident::new(capture_id, Span::call_site());
+
+        Some(OnSuccess::Expr(OnExpr {
+            captured: capture,
+            expr: parse_quote! { #success },
+        }))
+    } else {
+        parse_expression_success(input, token, section, capture)?
+    })
+}
+
+pub fn parse_when<T: Peek>(input: ParseStream, success_kw: T) -> syn::Result<WhenExpr> {
+    if input.peek(Token![@]) {
+        <Token![@]>::parse(input)?;
+    }
+    let ok_when: bool = if input.peek(kw::when) {
+        <kw::when>::parse(input)?;
+
+        false
+    } else if input.peek(success_kw) {
+        <Ident>::parse(input)?;
+
+        true
+    } else {
+        return Err(Error::new(
+            Span::call_site(), "expected @when or @ok expression",
+        ));
+    };
+
+    let expr = <Expr>::parse(input)?;
+
+    match expr {
+        Expr::Await(_) | Expr::Call(_) |
+        Expr::Cast(_) | Expr::Field(_) |
+        Expr::Group(_) | Expr::If(_) |
+        Expr::Index(_) | Expr::Macro(_) |
+        Expr::Match(_) | Expr::MethodCall(_) |
+        Expr::Path(_) | Expr::Reference(_) => {
+            parse_optional_semicolon(input)?;
+
+            Ok(WhenExpr { expr, tried: false, ok_when })
+        }
+        Expr::Try(try_expr) => {
+            let tried = true;
+            let expr = try_expr.expr.as_ref().clone();
+
+            parse_optional_semicolon(input)?;
+
+            Ok(WhenExpr { expr, tried, ok_when })
+        }
+        Expr::Block(_) if utils::block_contains_try(&expr) =>
+            Err(Error::new(expr.span(), "block can not contain a try expression")),
+        Expr::Block(_) =>
+            Ok(WhenExpr { expr, tried: false, ok_when }),
+        _ => Err(Error::new(
+            expr.span(),
+            format!("{:?} is not a supported when expression", decode_expr_type(&expr)),
+        ))
+    }
+}
+
+fn parse_expression_success<T: Peek>(
+    input: ParseStream, token: T, section: &str, capture: Option<Capture>,
+) -> syn::Result<Option<OnSuccess>> {
+    if input.peek(Token![@]) && input.peek2(token) {
+        <Token![@]>::parse(input)?;
+        <Ident>::parse(input)?;
+
+        let mut captured = capture;
+
+        if input.peek(Paren) {
+            let content;
+
+            parenthesized!(content in input);
+
+            captured = Some(content.parse::<Capture>()?);
+
+            <Token![=>]>::parse(input)?;
+        }
+
+        Ok(Some(
+            if let Ok(message) = parse_message(input, section, &captured) {
+                parse_optional_semicolon(input)?;
+                OnSuccess::Message(message)
+            } else {
+                let expr = parse_expression(input, section)?;
+
+                OnSuccess::Expr(OnExpr { captured, expr })
+            }
+        ))
+    } else {
+        Ok(None)
+    }
+}
+
+fn parse_expression(input: ParseStream, section: &str) -> syn::Result<Expr> {
+    let expr = <Expr>::parse(input)?;
+
+    match expr {
+        Expr::Block(_) | Expr::TryBlock(_) | Expr::Unsafe(_) => {}
+        Expr::Let(_) | Expr::Struct(_) =>
+            return Err(Error::new(
+                expr.span(),
+                format!(
+                    "{:?} is not a supported {} expression, try placing it into a code block",
+                    decode_expr_type(&expr), section
+                ),
+            )),
+        _ => parse_optional_semicolon(input)?
+    }
+
+    Ok(expr)
+}
+
+fn parse_optional_semicolon(input: ParseStream) -> syn::Result<()> {
     if let Some(punct) = input.cursor().punct() {
         if punct.0.as_char() == ';' {
             <Token![;]>::parse(input)?;
