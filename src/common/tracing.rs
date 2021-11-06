@@ -1,9 +1,9 @@
-#[cfg( feature = "trace")]
+#[cfg(feature = "trace")]
 use std::fmt::Display;
 
 use syn::parse::ParseStream;
 
-#[cfg( feature = "trace")]
+#[cfg(feature = "trace")]
 #[inline]
 pub fn trace_expansion<T: Display>(traced: T) -> T {
     println!("EXPANSION: {}", traced);
@@ -11,11 +11,11 @@ pub fn trace_expansion<T: Display>(traced: T) -> T {
     traced
 }
 
-#[cfg(not( feature = "trace"))]
+#[cfg(not(feature = "trace"))]
 #[inline]
 pub const fn trace_expansion<T>(traced: T) -> T { traced }
 
-#[cfg( feature = "trace")]
+#[cfg(feature = "trace")]
 #[inline]
 pub fn trace_parsed<T: Display, E: Display>(traced: Result<T, E>) -> Result<T, E> {
     match &traced {
@@ -28,17 +28,17 @@ pub fn trace_parsed<T: Display, E: Display>(traced: Result<T, E>) -> Result<T, E
     traced
 }
 
-#[cfg(not( feature = "trace"))]
+#[cfg(not(feature = "trace"))]
 #[inline]
 pub const fn trace_parsed<T>(traced: T) -> T { traced }
 
-#[cfg( feature = "trace")]
+#[cfg(feature = "trace")]
 #[inline]
 pub fn trace_source(input: ParseStream) -> ParseStream {
     println!("SOURCE: {}", input);
     input
 }
 
-#[cfg(not( feature = "trace"))]
+#[cfg(not(feature = "trace"))]
 #[inline]
 pub const fn trace_source(input: ParseStream) -> ParseStream { input }

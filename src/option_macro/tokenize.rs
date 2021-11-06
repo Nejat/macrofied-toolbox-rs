@@ -54,7 +54,7 @@ impl ToTokens for OptionMacro {
 }
 
 fn branch_some_or_none(
-    when: &WhenExpr, some: &OnSuccess, build_none: impl Fn() -> TokenStream
+    when: &WhenExpr, some: &OnSuccess, build_none: impl Fn() -> TokenStream,
 ) -> TokenStream {
     let when_expr = &when.expr;
     let (some_branch, on_some) = build_on_some(some);

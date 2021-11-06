@@ -136,7 +136,7 @@ mod tests;
 ///
 /// The `option!` macro consists of a `@when` section and one to three optional evaluation 
 /// sections `@some`, `@debug` and/or `@none`, at least one must be defined.
-/// 
+///
 /// When the `option!` macro is used in place of an expression and the intention is to
 /// assign the `Some(T)` value, the `@when` section can be skipped and replaced with a
 /// simplified `@some` section, which behaves as the `@when` section, _* see below for

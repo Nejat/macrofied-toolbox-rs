@@ -66,7 +66,7 @@ impl<T: Into<String>> From<T> for Capture {
         Self {
             identifier: identifier.into(),
             mutable: false,
-            reference: false
+            reference: false,
         }
     }
 }
@@ -144,7 +144,7 @@ impl Display for OnSuccess {
 pub struct WhenExpr {
     pub expr: Expr,
     pub tried: bool,
-    pub ok_when: bool
+    pub ok_when: bool,
 }
 
 #[cfg(feature = "trace")]

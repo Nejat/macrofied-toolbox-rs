@@ -180,7 +180,7 @@ pub fn parse_message(
                     Expr::Unary(_) | Expr::Unsafe(_) => {}
                     _ => return Err(Error::new(
                         expr.span(),
-                        format!("{:?} is not a supported {} expression", decode_expr_type(&expr), section)
+                        format!("{:?} is not a supported {} expression", decode_expr_type(&expr), section),
                     ))
                 }
 
