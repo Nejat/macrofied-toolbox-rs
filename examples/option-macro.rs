@@ -24,10 +24,6 @@ fn main() {
     }
 
     fn foo(some: bool) -> Option<usize> {
-        if some {
-            Some(42)
-        } else {
-            None
-        }
+        if some { Some(42) } else { None }
     }
 }

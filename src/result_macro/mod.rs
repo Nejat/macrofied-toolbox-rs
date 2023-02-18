@@ -2,6 +2,8 @@
 use std::fmt::{self, Display, Formatter};
 
 use crate::common::{Message, OnFail, OnSuccess, WhenExpr};
+#[cfg(feature = "trace")]
+use crate::display;
 use crate::result_macro::parts::Parts;
 
 mod parse;
@@ -18,19 +20,15 @@ pub struct ResultMacro {
 #[cfg(feature = "trace")]
 impl Display for ResultMacro {
     fn fmt(&self, fmt: &mut Formatter<'_>) -> fmt::Result {
-        let ok = format_option(&self.ok);
-        let debug = format_option(&self.debug);
-        let error = format_option(&self.error);
+        let ok = display(&self.ok);
+        let debug = display(&self.debug);
+        let error = display(&self.error);
 
-        return write!(
-            fmt, "result! {{\n  when: {},\n  ok: {},\n  debug: {},\n  error: {}\n}}",
-            self.when, ok, debug, error
-        );
-
-        //noinspection DuplicatedCode
-        fn format_option<T: Display>(source: &Option<T>) -> String {
-            if let Some(some) = source { format!("{}", some) } else { "None".to_string() }
-        }
+        write!(
+            fmt,
+            "result! {{\n  when: {ok},\n  ok: {debug},\n  debug: {error},\n  error: {}\n}}",
+            self.when
+        )
     }
 }
 

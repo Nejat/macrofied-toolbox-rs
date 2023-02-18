@@ -2,6 +2,8 @@
 use std::fmt::{self, Display, Formatter};
 
 use crate::common::{Message, OnFail, OnSuccess, WhenExpr};
+#[cfg(feature = "trace")]
+use crate::display;
 use crate::option_macro::parts::Parts;
 
 mod parse;
@@ -18,19 +20,14 @@ pub struct OptionMacro {
 #[cfg(feature = "trace")]
 impl Display for OptionMacro {
     fn fmt(&self, fmt: &mut Formatter<'_>) -> fmt::Result {
-        let some = format_option(&self.some);
-        let debug = format_option(&self.debug);
-        let none = format_option(&self.none);
+        let some = display(&self.some);
+        let debug = display(&self.debug);
+        let none = display(&self.none);
 
-        return write!(
-            fmt, "option! {{\n  when: {},\n  some: {},\n  debug: {},\n  none: {}\n}}",
-            self.when, some, debug, none
-        );
-
-        //noinspection DuplicatedCode
-        fn format_option<T: Display>(source: &Option<T>) -> String {
-            if let Some(some) = source { format!("{}", some) } else { "None".to_string() }
-        }
+        write!(
+            fmt, "option! {{\n  when: {},\n  some: {some},\n  debug: {debug},\n  none: {none}\n}}",
+            self.when
+        )
     }
 }
 

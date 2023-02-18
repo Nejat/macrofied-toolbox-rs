@@ -114,6 +114,8 @@ extern crate syn;
 
 #[cfg(any(feature = "result", feature = "option"))]
 use proc_macro::TokenStream;
+#[cfg(feature = "trace")]
+use std::fmt::Display;
 
 #[cfg(any(feature = "result", feature = "option"))]
 use quote::ToTokens;
@@ -426,4 +428,20 @@ pub fn option(input: TokenStream) -> TokenStream {
 #[proc_macro]
 pub fn result(input: TokenStream) -> TokenStream {
     parse_macro_input!(input as result_macro::ResultMacro).into_token_stream().into()
+}
+
+#[cfg(feature = "trace")]
+fn display<D: Display>(value: &Option<D>) -> String {
+    value.as_ref().map_or_else(|| String::from("None"), |val| format!("{val}"))
+}
+
+#[cfg(feature = "trace")]
+fn displays<D: ToTokens>(value: &Option<Vec<D>>) -> String {
+    value.as_ref().map_or_else(
+        || String::from("None"),
+        |vals| format!(
+            "{:?}",
+            vals.iter().map(|v| format!("{}", v.to_token_stream())).collect::<Vec<String>>()
+        ),
+    )
 }
