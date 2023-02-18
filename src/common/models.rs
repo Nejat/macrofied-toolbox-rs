@@ -6,6 +6,9 @@ use proc_macro2::TokenStream;
 use quote::ToTokens;
 use syn::{Expr, Lit};
 
+#[cfg(feature = "trace")]
+use crate::{display, displays};
+
 pub struct Message {
     pub args: Option<Vec<Expr>>,
     pub captured: Option<Capture>,
@@ -15,24 +18,10 @@ pub struct Message {
 #[cfg(feature = "trace")]
 impl Display for Message {
     fn fmt(&self, fmt: &mut Formatter<'_>) -> fmt::Result {
-        let args = if let Some(args) = &self.args {
-            format!(
-                "{:?}",
-                args.iter().map(|v| format!("{}", v.to_token_stream())).collect::<Vec<String>>()
-            )
-        } else {
-            "None".to_string()
-        };
-        let captured = if let Some(captured) = &self.captured {
-            format!("{}", captured)
-        } else {
-            "None".to_string()
-        };
+        let args = displays(&self.args);
+        let captured = display(&self.captured);
 
-        write!(
-            fmt, "{{ args: {}, captured: {}, fmt: {} }}",
-            args, captured, self.fmt.to_token_stream()
-        )
+        write!(fmt, "{{ args: {args}, captured: {captured}, fmt: {} }}", self.fmt.to_token_stream())
     }
 }
 
@@ -66,7 +55,7 @@ impl<T: Into<String>> From<T> for Capture {
         Self {
             identifier: identifier.into(),
             mutable: false,
-            reference: false
+            reference: false,
         }
     }
 }
@@ -89,15 +78,9 @@ pub struct OnExpr {
 #[cfg(feature = "trace")]
 impl Display for OnExpr {
     fn fmt(&self, fmt: &mut Formatter<'_>) -> fmt::Result {
-        let captured = if let Some(captured) = &self.captured {
-            format!("{}", captured)
-        } else {
-            "None".to_string()
-        };
+        let captured = display(&self.captured);
 
-        write!(
-            fmt, "{{ captured: {}, expr: \"{}\" }}", captured, self.expr.to_token_stream()
-        )
+        write!(fmt, "{{ captured: {captured}, expr: \"{}\" }}", self.expr.to_token_stream())
     }
 }
 
@@ -109,18 +92,10 @@ pub struct OnFail {
 #[cfg(feature = "trace")]
 impl Display for OnFail {
     fn fmt(&self, fmt: &mut Formatter<'_>) -> fmt::Result {
-        let expr = if let Some(expr) = &self.expr {
-            format!("{}", expr)
-        } else {
-            "None".to_string()
-        };
-        let message = if let Some(message) = &self.message {
-            format!("{}", message)
-        } else {
-            "None".to_string()
-        };
+        let expr = display(&self.expr);
+        let message = display(&self.message);
 
-        write!(fmt, "{{ expr: {}, message: {} }}", expr, message)
+        write!(fmt, "{{ expr: {expr}, message: {message} }}")
     }
 }
 
@@ -133,10 +108,8 @@ pub enum OnSuccess {
 impl Display for OnSuccess {
     fn fmt(&self, fmt: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Expr(expr) =>
-                write!(fmt, "{}", expr),
-            Self::Message(message) =>
-                write!(fmt, "{}", message)
+            Self::Expr(expr) => write!(fmt, "{expr}"),
+            Self::Message(message) => write!(fmt, "{message}")
         }
     }
 }
@@ -144,7 +117,7 @@ impl Display for OnSuccess {
 pub struct WhenExpr {
     pub expr: Expr,
     pub tried: bool,
-    pub ok_when: bool
+    pub ok_when: bool,
 }
 
 #[cfg(feature = "trace")]

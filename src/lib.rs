@@ -7,7 +7,7 @@
 #![allow(clippy::module_name_repetitions)]
 #![allow(clippy::items_after_statements)]
 // ==============================================================
-#![doc(html_root_url = "https://docs.rs/macrofied-toolbox/0.4.2")]
+#![doc(html_root_url = "https://docs.rs/macrofied-toolbox/0.4.3")]
 
 //! This library provides an ergonomic experience of adding debugging messages to rust's
 //! `Result<T,E>` and `Option<T>` patterns
@@ -114,6 +114,8 @@ extern crate syn;
 
 #[cfg(any(feature = "result", feature = "option"))]
 use proc_macro::TokenStream;
+#[cfg(feature = "trace")]
+use std::fmt::Display;
 
 #[cfg(any(feature = "result", feature = "option"))]
 use quote::ToTokens;
@@ -136,7 +138,7 @@ mod tests;
 ///
 /// The `option!` macro consists of a `@when` section and one to three optional evaluation 
 /// sections `@some`, `@debug` and/or `@none`, at least one must be defined.
-/// 
+///
 /// When the `option!` macro is used in place of an expression and the intention is to
 /// assign the `Some(T)` value, the `@when` section can be skipped and replaced with a
 /// simplified `@some` section, which behaves as the `@when` section, _* see below for
@@ -426,4 +428,20 @@ pub fn option(input: TokenStream) -> TokenStream {
 #[proc_macro]
 pub fn result(input: TokenStream) -> TokenStream {
     parse_macro_input!(input as result_macro::ResultMacro).into_token_stream().into()
+}
+
+#[cfg(feature = "trace")]
+fn display<D: Display>(value: &Option<D>) -> String {
+    value.as_ref().map_or_else(|| String::from("None"), |val| format!("{val}"))
+}
+
+#[cfg(feature = "trace")]
+fn displays<D: ToTokens>(value: &Option<Vec<D>>) -> String {
+    value.as_ref().map_or_else(
+        || String::from("None"),
+        |vals| format!(
+            "{:?}",
+            vals.iter().map(|v| format!("{}", v.to_token_stream())).collect::<Vec<String>>()
+        ),
+    )
 }

@@ -6,7 +6,13 @@ error[E0308]: mismatched types
 6 | |         @ok   "will not compile";
 7 | |     }
   | |     ^- help: try using a conversion method: `.to_string()`
-  | |_____|
-  |       expected struct `String`, found `&str`
+  | |     |
+  | |_____expected struct `String`, found `&str`
+  |       arguments to this enum variant are incorrect
   |
+note: tuple variant defined here
+ --> $RUST/core/src/result.rs
+  |
+  |     Err(#[stable(feature = "rust1", since = "1.0.0")] E),
+  |     ^^^
   = note: this error originates in the macro `result` (in Nightly builds, run with -Z macro-backtrace for more info)

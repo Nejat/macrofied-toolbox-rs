@@ -78,7 +78,7 @@ pub fn decode_expr_type(expr: &Expr) -> &'static str {
         Expr::Verbatim(_) => "verbatim",
         Expr::While(_) => "while",
         Expr::Yield(_) => "yield",
-        Expr::__TestExhaustive(_) => unimplemented!()
+        _ => unimplemented!()
     }
 }
 
@@ -148,7 +148,7 @@ pub fn parse_message(
 
             match literal {
                 Lit::Str(_) => {}
-                _ => return Err(Error::new(literal.span(), format!("{} expects a string literal", section)))
+                _ => return Err(Error::new(literal.span(), format!("{section} expects a string literal")))
             }
 
             let mut exprs = Vec::new();
@@ -180,7 +180,7 @@ pub fn parse_message(
                     Expr::Unary(_) | Expr::Unsafe(_) => {}
                     _ => return Err(Error::new(
                         expr.span(),
-                        format!("{:?} is not a supported {} expression", decode_expr_type(&expr), section)
+                        format!("{:?} is not a supported {section} expression", decode_expr_type(&expr)),
                     ))
                 }
 
@@ -308,8 +308,8 @@ fn parse_expression(input: ParseStream, section: &str) -> syn::Result<Expr> {
             return Err(Error::new(
                 expr.span(),
                 format!(
-                    "{:?} is not a supported {} expression, try placing it into a code block",
-                    decode_expr_type(&expr), section
+                    "{:?} is not a supported {section} expression, try placing it into a code block",
+                    decode_expr_type(&expr)
                 ),
             )),
         _ => parse_optional_semicolon(input)?
@@ -335,7 +335,7 @@ pub mod utils {
 
     pub(super) fn block_contains_try(expr: &Expr) -> bool {
         if let Expr::Block(block_expr) = expr {
-            if (&block_expr.block.stmts)
+            if block_expr.block.stmts
                 .iter()
                 .any(
                     |stmt| {
